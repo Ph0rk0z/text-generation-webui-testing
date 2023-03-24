@@ -8,8 +8,9 @@ import torch
 import modules.shared as shared
 
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged")))
+#sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
 import llama
-import llama_inference_offload
+#import llama_inference_offload
 import opt
 import gptneox
 import gptj
@@ -66,7 +67,7 @@ def load_quantized(model_name):
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear, load_llama_model_4bit_low_ram
       model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}" )
-      print (shared.args.lora, shared.lora_name)
+      print (shared.args.lora, shared.lora_name,)
 
       if not shared.args.lora or shared.lora_name == "None":
          print('Apply auto switch and half. Lora:', shared.lora_name)
@@ -83,7 +84,7 @@ def load_quantized(model_name):
         model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits, shared.args.gptq_pre_layer)
     else:
         model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits)
-
+        print ('Load Quant')
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory:
             memory_map = list(map(lambda x : x.strip(), shared.args.gpu_memory))
