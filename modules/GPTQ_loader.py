@@ -66,8 +66,9 @@ def load_quantized(model_name):
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear, load_llama_model_4bit_low_ram
       model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}" )
-      print('Apply auto switch and half')
-      if shared.args.lora == '':
+    
+      if not(shared.args.lora):
+         print('Apply auto switch and half. Lora:', shared.args.lora)
          for n, m in model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear):
               m.zeros = m.zeros.half()
