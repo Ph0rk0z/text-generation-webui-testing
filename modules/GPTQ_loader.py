@@ -7,17 +7,18 @@ import torch
 
 import modules.shared as shared
 
-sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
+sys.path.insert(0, str(Path("repositories/GPTQ-Merged")))
 import llama
-import llama_inference_offload
+#import llama_inference_offload
 import opt
-
+import gptneox
+import gptj
 
 def load_quantized(model_name):
     if not shared.args.gptq_model_type:
         # Try to determine model type from model name
         model_type = model_name.split('-')[0].lower()
-        if model_type not in ('llama', 'opt'):
+        if model_type not in ('llama', 'opt', 'gptneox', 'gptj'):
             print("Can't determine model type from model name. Please specify it manually using --gptq-model-type "
                   "argument")
             exit()
@@ -31,6 +32,10 @@ def load_quantized(model_name):
             load_quant = llama_inference_offload.load_quant
     elif model_type == 'opt':
         load_quant = opt.load_quant
+    elif model_type == 'gptneox':
+        load_quant = gptneox.load_quant
+    elif model_type == 'gptj':
+        load_quant = gptj.load_quant
     else:
         print("Unknown pre-quantized model type specified. Only 'llama' and 'opt' are supported")
         exit()
