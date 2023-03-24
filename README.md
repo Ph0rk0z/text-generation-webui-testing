@@ -1,8 +1,30 @@
-# Text generation web UI
+# Text generation web UI Here there be dragons.
 
-A gradio web UI for running Large Language Models like GPT-J 6B, OPT, GALACTICA, LLaMA, and Pygmalion.
+- Allow 4bit loras and use of the faster --autograd implementation.
+- Use GPT-J 4-bits (pre group size)
+- 8 bit threshold hardcoded to 1.5 for now
+- load 4-bit lora from web ui
+- compare original load_quant vs new implementation
 
-Its goal is to become the [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) of text generation.
+#### Depends on:
+https://github.com/Ph0rk0z/GPTQ-Merged
+
+https://github.com/Curlypla/peft-GPTQ
+
+#### Why?
+
+* 13b and 30b llama response times for me become usable with a lora or not.
+* Changes aren't so clean to be accepted as a p/r
+
+#### How?
+
+* Clone and re-use your oobabooga/text-generation-webui conda environment.
+* Build GPTQ kernel with python setup.py install after cloing into repositories/
+* Also build and install patched PEFT.
+
+#### Windows?
+
+* I don't know, can't use it. Try WSL
 
 [[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
 
