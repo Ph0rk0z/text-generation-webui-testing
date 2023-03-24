@@ -9,7 +9,7 @@ import modules.shared as shared
 
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged")))
 import llama
-#import llama_inference_offload
+import llama_inference_offload
 import opt
 import gptneox
 import gptj
@@ -62,8 +62,22 @@ def load_quantized(model_name):
         print(f"Could not find {pt_model}, exiting...")
         exit()
 
+    if shared.args.autograd:
+      import autograd_4bit
+      from autograd_4bit import Autograd4bitQuantLinear, load_llama_model_4bit_low_ram
+      model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}" )
+      print('Apply auto switch and half')
+      if shared.args.lora == '':
+         for n, m in model.named_modules():
+           if isinstance(m, Autograd4bitQuantLinear):
+              m.zeros = m.zeros.half()
+              m.scales = m.scales.half()
+              m.bias = m.bias.half()
+         autograd_4bit.use_new = True
+         autograd_4bit.auto_switch = True
+       
     # qwopqwop200's offload
-    if shared.args.gptq_pre_layer:
+    elif shared.args.gptq_pre_layer:
         model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits, shared.args.gptq_pre_layer)
     else:
         model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits)
