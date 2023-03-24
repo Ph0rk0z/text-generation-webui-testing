@@ -26,6 +26,13 @@ https://github.com/Curlypla/peft-GPTQ
 
 * I don't know, can't use it. Try WSL
 
+#### Credits
+
+* https://github.com/johnsmith0031/alpaca_lora_4bit
+* https://github.com/0cc4m/GPTQ-for-LLaMa
+
+
+
 [[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
 
 |![Image1](https://github.com/oobabooga/screenshots/raw/main/qa.png) | ![Image2](https://github.com/oobabooga/screenshots/raw/main/cai3.png) |
