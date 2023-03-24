@@ -6,9 +6,12 @@ from modules.text_generation import clear_torch_cache
 
 
 def reload_model():
+    shared.lora_name = None
+    shared.args.lora = None
     shared.model = shared.tokenizer = None
     clear_torch_cache()
     shared.model, shared.tokenizer = load_model(shared.model_name)
+
 
 def add_lora_to_model(lora_name):
 
@@ -20,7 +23,7 @@ def add_lora_to_model(lora_name):
     if shared.lora_name != "None" or lora_name == "None":
         reload_model()
     shared.lora_name = lora_name
-    if shared.args.autograd and shared.args.lora:
+    if shared.args.autograd and shared.lora_name != "None":
        import sys
        import torch
        sys.path.insert(0, 'repositories/GPTQ-Merged')
