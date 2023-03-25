@@ -33,7 +33,7 @@ settings = {
     'stop_at_newline': False,
     'chat_prompt_size': 2048,
     'chat_prompt_size_min': 0,
-    'chat_prompt_size_max': 2048,
+    'chat_prompt_size_max': 4096,
     'chat_generation_attempts': 1,
     'chat_generation_attempts_min': 1,
     'chat_generation_attempts_max': 5,

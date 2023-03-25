@@ -2,6 +2,7 @@
 
 - Allow 4bit loras and use of the faster --autograd implementation.
 - Use GPT-J 4-bits (pre group size)
+- GPT-NeoXT 4-bits (pre group size) - oasst tested
 - 8 bit threshold hardcoded to 1.5 for now
 - load 4-bit lora from web ui
 - compare original load_quant vs new implementation
