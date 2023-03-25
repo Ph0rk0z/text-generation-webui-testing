@@ -56,7 +56,7 @@ https://github.com/Curlypla/peft-GPTQ
 * [FlexGen offload](https://github.com/oobabooga/text-generation-webui/wiki/FlexGen).
 * [DeepSpeed ZeRO-3 offload](https://github.com/oobabooga/text-generation-webui/wiki/DeepSpeed).
 * Get responses via API, [with](https://github.com/oobabooga/text-generation-webui/blob/main/api-example-streaming.py) or [without](https://github.com/oobabooga/text-generation-webui/blob/main/api-example.py) streaming.
-* [LLaMA model, including 4-bit mode](https://github.com/oobabooga/text-generation-webui/wiki/LLaMA-model).
+* [LLaMA model, including 4-bit GPTQ support](https://github.com/oobabooga/text-generation-webui/wiki/LLaMA-model).
 * [RWKV model](https://github.com/oobabooga/text-generation-webui/wiki/RWKV-model).
 * [Supports LoRAs](https://github.com/oobabooga/text-generation-webui/wiki/Using-LoRAs).
 * Supports softprompts.

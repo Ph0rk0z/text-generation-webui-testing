@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import torch
+
 import modules.shared as shared
 from modules.models import load_model
 from modules.text_generation import clear_torch_cache
@@ -56,8 +58,12 @@ def add_lora_to_model(lora_name):
               elif shared.args.load_in_8bit:
                   params['device_map'] = {'': 0}
             
-          shared.model = PeftModel.from_pretrained(shared.model, Path(f"loras/{lora_name}"), **params)
-          if not shared.args.load_in_8bit and not shared.args.cpu:
-              shared.model.half()
-              if not hasattr(shared.model, "hf_device_map"):
-                  shared.model.cuda()
+        shared.model = PeftModel.from_pretrained(shared.model, Path(f"loras/{lora_name}"), **params)
+        if not shared.args.load_in_8bit and not shared.args.cpu:
+            shared.model.half()
+            if not hasattr(shared.model, "hf_device_map"):
+                if torch.has_mps:
+                    device = torch.device('mps')
+                    shared.model = shared.model.to(device)
+                else:
+                    shared.model = shared.model.cuda()
