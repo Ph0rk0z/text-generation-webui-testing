@@ -68,7 +68,7 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear, load_llama_model_4bit_low_ram
-      model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}" )
+      model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
       print (shared.args.lora, shared.lora_name,)
 
       if not shared.args.lora or shared.lora_name == "None":
