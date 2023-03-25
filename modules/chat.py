@@ -230,6 +230,7 @@ def clear_chat_log(name1, name2):
             if '<|BEGIN-VISIBLE-CHAT|>' in shared.history['internal'][i][0]:
                 shared.history['visible'] = [['', apply_extensions(shared.history['internal'][i][1], "output")]]
                 shared.history['internal'] = [shared.history['internal'][i]]
+                #shared.history['internal'] = shared.history['internal'][:i+1]
                 found = True
                 break
         if not found:
@@ -341,6 +342,7 @@ def load_character(_character, name1, name2):
             data['example_dialogue'] = data['example_dialogue'].replace('{{user}}', name1).replace('{{char}}', name2)
             data['example_dialogue'] = data['example_dialogue'].replace('<USER>', name1).replace('<BOT>', name2)
             context += f"{data['example_dialogue'].strip()}\n"
+            #shared.history['internal'] = tokenize_dialogue(data['example_dialogue'], name1, name2)
         if 'char_greeting' in data and len(data['char_greeting'].strip()) > 0:
             shared.history['internal'] += [['<|BEGIN-VISIBLE-CHAT|>', data['char_greeting']]]
             shared.history['visible'] += [['', apply_extensions(data['char_greeting'], "output")]]
