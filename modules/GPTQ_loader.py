@@ -38,7 +38,7 @@ def load_quantized(model_name):
     elif model_type == 'gptj':
         load_quant = gptj.load_quant
     else:
-        print("Unknown pre-quantized model type specified. Only 'llama' and 'opt' are supported")
+        print("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj', 'gptneox' are supported")
         exit()
 
     path_to_model = Path(f'models/{model_name}')
@@ -67,9 +67,19 @@ def load_quantized(model_name):
 
     if shared.args.autograd:
       import autograd_4bit
-      from autograd_4bit import Autograd4bitQuantLinear, load_llama_model_4bit_low_ram
-      model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
-      print (shared.args.lora, shared.lora_name,)
+      from autograd_4bit import Autograd4bitQuantLinear
+      if model_type == 'opt':
+         from autograd_4bit import load_opt_model_4bit_low_ram
+         model, tokenizer = load_opt_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+
+      elif model_type == 'llama':
+           from autograd_4bit import load_llama_model_4bit_low_ram
+           model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+
+      else:
+          print (f" Error: {model_type}, {path_to_model}")
+
+      print (shared.args.lora, shared.lora_name)
 
       if not shared.args.lora or shared.lora_name == "None":
          print('Apply auto switch and half. Lora:', shared.lora_name)
