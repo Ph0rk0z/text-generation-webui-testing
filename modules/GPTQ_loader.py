@@ -68,13 +68,18 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      if model_type == 'opt':
-         from autograd_4bit import load_opt_model_4bit_low_ram
-         model, tokenizer = load_opt_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+      if model_type == 'opt'or model_type == 'gptneox' or model_type == 'gptj' :
+         from autograd_4bit import load_auto_model_4bit_low_ram
+         model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
 
       elif model_type == 'llama':
            from autograd_4bit import load_llama_model_4bit_low_ram
            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+
+     # elif model_type == 'gptneox':
+     #      from autograd_4bit import load_neox_model_4bit_low_ram
+     #      model, tokenizer = load_neox_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+
 
       else:
           print (f" Error: {model_type}, {path_to_model}")
