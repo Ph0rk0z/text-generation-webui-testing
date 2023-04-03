@@ -63,7 +63,7 @@ def load_quantized(model_name):
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_auto_model_4bit_low_ram
-      model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
+      model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}" )
 
       print (shared.args.lora, shared.lora_name)
 
