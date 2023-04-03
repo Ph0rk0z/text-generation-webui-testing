@@ -18,7 +18,8 @@ import gptj
 def load_quantized(model_name):
     if not(shared.args.gptq_bits):
        shared.args.gptq_bits = shared.args.wbits
-    
+    if (shared.args.model_type):
+        shared.args.gptq_model_type = shared.args.model_type
     if not shared.args.gptq_model_type:
         # Try to determine model type from model name
         model_type = model_name.split('-')[0].lower()
@@ -70,21 +71,8 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      if model_type == 'opt'or model_type == 'gptneox' or model_type == 'gptj' :
-         from autograd_4bit import load_auto_model_4bit_low_ram
-         model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
-
-      elif model_type == 'llama':
-           from autograd_4bit import load_llama_model_4bit_low_ram
-           model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
-
-     # elif model_type == 'gptneox':
-     #      from autograd_4bit import load_neox_model_4bit_low_ram
-     #      model, tokenizer = load_neox_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
-
-
-      else:
-          print (f" Error: {model_type}, {path_to_model}")
+      from autograd_4bit import load_auto_model_4bit_low_ram
+      model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"models/{pt_model}.pt" )
 
       print (shared.args.lora, shared.lora_name)
 
