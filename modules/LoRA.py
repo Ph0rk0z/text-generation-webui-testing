@@ -8,8 +8,7 @@ from modules.text_generation import clear_torch_cache
 
 
 def reload_model():
-    shared.lora_name = None
-    shared.args.lora = None
+    shared.lora_name = shared.args.lora = None
     shared.model = shared.tokenizer = None
     clear_torch_cache()
     shared.model, shared.tokenizer = load_model(shared.model_name)
@@ -29,7 +28,7 @@ def add_lora_to_model(lora_name):
        import sys
 
        sys.path.insert(0, 'repositories/GPTQ-Merged')
-       import autograd_4bit
+       import autograd_4bit, quant
        from autograd_4bit import Autograd4bitQuantLinear
        
        sys.path.insert(0, 'repositories/peft-GPTQ/src')
