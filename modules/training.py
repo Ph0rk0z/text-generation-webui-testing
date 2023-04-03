@@ -5,6 +5,10 @@ import time
 import traceback
 from pathlib import Path
 
+#For GPTQ and autograd
+sys.path.insert(0, 'repositories/GPTQ-Merged')
+sys.path.insert(0, 'repositories/peft-GPTQ/src')
+
 import gradio as gr
 import torch
 import transformers
