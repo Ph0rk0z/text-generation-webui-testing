@@ -16,6 +16,9 @@ import gptneox
 import gptj
 
 def load_quantized(model_name):
+    if not(shared.args.gptq_bits):
+       shared.args.gptq_bits = shared.args.wbits
+    
     if not shared.args.gptq_model_type:
         # Try to determine model type from model name
         model_type = model_name.split('-')[0].lower()
@@ -40,7 +43,6 @@ def load_quantized(model_name):
     else:
         print("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj', 'gptneox' are supported")
         exit()
-
     path_to_model = Path(f'models/{model_name}')
     if path_to_model.name.lower().startswith('llama-7b'):
         pt_model = f'llama-7b-{shared.args.gptq_bits}bit'
