@@ -37,6 +37,8 @@ https://github.com/Curlypla/peft-GPTQ
 #### Example Commands
 ```
 python server.py --model llama-30b --chat --autograd --wbits 4 
+python server.py --model opt-13b --chat --autograd --wbits 4 --lora opt-13b-lora-1.0ep
+python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox
 ```
 
 
