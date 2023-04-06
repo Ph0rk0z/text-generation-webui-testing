@@ -1,4 +1,5 @@
-# Text generation web UI Here there be dragons.
+# Text generation web UI 
+# Here there be dragons.
 
 - Allow 4bit loras and use of the faster --autograd implementation.
 - Use GPT-J 4-bits (pre group size)
