@@ -9,7 +9,7 @@ import torch
 import modules.shared as shared
 
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
-#sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
+sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/gptq_llama")))
 import llama
 #import llama_inference_offload
 import opt
@@ -72,7 +72,7 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      from autograd_4bit import load_llama_model_4bit_low_ram #load_auto_model_4bit_low_ram
+      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
       if (model_type== 'llama'):
             model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize )
       else:
@@ -84,7 +84,7 @@ def load_quantized(model_name):
          print('Apply auto switch and half. Lora:', shared.lora_name)
          for n, m in model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear):
-              if (shared.args.groupsize):
+              if (shared.args.groupsize == -1):
                   m.zeros = m.zeros.half()
               m.scales = m.scales.half()
               m.bias = m.bias.half()
