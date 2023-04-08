@@ -109,6 +109,7 @@ parser.add_argument('--pre_layer', type=int, default=0, help='GPTQ: The number o
 parser.add_argument('--gptq-bits', type=int, default=0, help='DEPRECATED: use --wbits instead.')
 parser.add_argument('--gptq-model-type', type=str, help='DEPRECATED: use --model_type instead.')
 parser.add_argument('--gptq-pre-layer', type=int, default=0, help='DEPRECATED: use --pre_layer instead.')
+parser.add_argument('--gptqv1', type=int, default=0, help='Model Type V1')
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')

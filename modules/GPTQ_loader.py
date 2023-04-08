@@ -8,13 +8,13 @@ import torch
 
 import modules.shared as shared
 
-sys.path.insert(0, str(Path("repositories/GPTQ-Merged")))
+sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
 #sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
 import llama
 #import llama_inference_offload
-import opt
-import gptneox
-import gptj
+#import opt
+#import gptneox
+#import gptj
 
 
 
@@ -32,25 +32,34 @@ def load_quantized(model_name):
     else:
         model_type = shared.args.gptq_model_type.lower()
 
-    if model_type == 'llama':
-        if not shared.args.gptq_pre_layer:
-            load_quant = llama.load_quant
-        else:
-            load_quant = llama_inference_offload.load_quant
-    elif model_type == 'opt':
-        load_quant = opt.load_quant
-    elif model_type == 'gptneox':
-        load_quant = gptneox.load_quant
-    elif model_type == 'gptj':
-        load_quant = gptj.load_quant
-    else:
-        print("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj', 'gptneox' are supported")
-        exit()
+   # if model_type == 'llama':
+      #  if not shared.args.gptq_pre_layer:
+       #     load_quant = llama.load_quant
+       # else:
+        #    load_quant = llama_inference_offload.load_quant
+  #  elif model_type == 'opt':
+   #     load_quant = opt.load_quant
+   # elif model_type == 'gptneox':
+     #   load_quant = gptneox.load_quant
+  #  elif model_type == 'gptj':
+   #     load_quant = gptj.load_quant
+   # else:
+    #    print("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj', 'gptneox' are supported")
+    #    exit()
     path_to_model = Path(f'models/{model_name}')
-    pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
-
-        # Try to find the .safetensors or .pt both in the model dir and in the subfolder
-    for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
+    found_pts = list(path_to_model.glob("*.pt"))
+    found_safetensors = list(path_to_model.glob("*.safetensors"))
+    pt_path = None
+    
+    if len(found_pts) == 1:
+        pt_path = found_pts[0]
+    elif len(found_safetensors) == 1:
+        pt_path = found_safetensors[0]
+    else: 
+        pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
+    
+      # Try to find the .safetensors or .pt both in the model dir and in the subfolder
+        for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
             if path.exists():
                 print(f"Found {path}")
                 pt_path = path
@@ -63,11 +72,11 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
+      from autograd_4bit import load_llama_model_4bit_low_ram #load_auto_model_4bit_low_ram
       if (model_type== 'llama'):
-            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}" )
-      else:
-            model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}" )
+            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize )
+      #else:
+      #      model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize )
 
       print (shared.args.lora, shared.lora_name)
 
@@ -75,7 +84,8 @@ def load_quantized(model_name):
          print('Apply auto switch and half. Lora:', shared.lora_name)
          for n, m in model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear):
-              m.zeros = m.zeros.half()
+              if (shared.args.gptqv1):
+                  m.zeros = m.zeros.half()
               m.scales = m.scales.half()
               m.bias = m.bias.half()
          autograd_4bit.use_new = True
