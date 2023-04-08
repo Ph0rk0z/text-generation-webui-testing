@@ -5,135 +5,88 @@ from pathlib import Path
 
 import accelerate
 import torch
-import transformers
-from transformers import AutoConfig, AutoModelForCausalLM
 
 import modules.shared as shared
 
-sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
-import llama_inference_offload
-from modelutils import find_layers
-from quant import make_quant
+sys.path.insert(0, str(Path("repositories/GPTQ-Merged")))
+#sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
+import llama
+#import llama_inference_offload
+import opt
+import gptneox
+import gptj
 
-
-def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head'], kernel_switch_threshold=128):
-
-    def noop(*args, **kwargs):
-        pass
-
-    config = AutoConfig.from_pretrained(model)
-    torch.nn.init.kaiming_uniform_ = noop
-    torch.nn.init.uniform_ = noop
-    torch.nn.init.normal_ = noop
-
-    torch.set_default_dtype(torch.half)
-    transformers.modeling_utils._init_weights = False
-    torch.set_default_dtype(torch.half)
-    model = AutoModelForCausalLM.from_config(config)
-    torch.set_default_dtype(torch.float)
-    model = model.eval()
-    layers = find_layers(model)
-    for name in exclude_layers:
-        if name in layers:
-            del layers[name]
-
-    gptq_args = inspect.getfullargspec(make_quant).args
-
-    make_quant_kwargs = {
-        'module': model,
-        'names': layers,
-        'bits': wbits,
-    }
-    if 'groupsize' in gptq_args:
-        make_quant_kwargs['groupsize'] = groupsize
-    if 'faster' in gptq_args:
-        make_quant_kwargs['faster'] = faster_kernel
-    if 'kernel_switch_threshold' in gptq_args:
-        make_quant_kwargs['kernel_switch_threshold'] = kernel_switch_threshold
-
-    make_quant(**make_quant_kwargs)
-
-    del layers
-
-    print('Loading model ...')
-    if checkpoint.endswith('.safetensors'):
-        from safetensors.torch import load_file as safe_load
-        model.load_state_dict(safe_load(checkpoint), strict=False)
-    else:
-        model.load_state_dict(torch.load(checkpoint), strict=False)
-    model.seqlen = 2048
-    print('Done.')
-
-    return model
 
 
 def load_quantized(model_name):
-    if not shared.args.model_type:
+    if not(shared.args.gptq_bits):
+       shared.args.gptq_bits = shared.args.wbits
+    if (shared.args.model_type):
+        shared.args.gptq_model_type = shared.args.model_type
+    if not shared.args.gptq_model_type:
         # Try to determine model type from model name
-        name = model_name.lower()
-        if any((k in name for k in ['llama', 'alpaca', 'vicuna'])):
-            model_type = 'llama'
-        elif any((k in name for k in ['opt-', 'galactica'])):
-            model_type = 'opt'
-        elif any((k in name for k in ['gpt-j', 'pygmalion-6b'])):
-            model_type = 'gptj'
-        else:
-            print("Can't determine model type from model name. Please specify it manually using --model_type "
-                  "argument")
+        model_type = model_name.split('-')[0].lower()
+        if model_type not in ('llama', 'opt', 'gptneox', 'gptj'):
+            print("Can't determine model type from model name. Please specify it manually using --model-type argument")
             exit()
     else:
-        model_type = shared.args.model_type.lower()
+        model_type = shared.args.gptq_model_type.lower()
 
-    if shared.args.pre_layer and model_type == 'llama':
-        load_quant = llama_inference_offload.load_quant
-    elif model_type in ('llama', 'opt', 'gptj'):
-        if shared.args.pre_layer:
-            print("Warning: ignoring --pre_layer because it only works for llama model type.")
-        load_quant = _load_quant
-    else:
-        print("Unknown pre-quantized model type specified. Only 'llama', 'opt' and 'gptj' are supported")
-        exit()
-
-    # Now we are going to try to locate the quantized model file.
-    path_to_model = Path(f'{shared.args.model_dir}/{model_name}')
-    found_pts = list(path_to_model.glob("*.pt"))
-    found_safetensors = list(path_to_model.glob("*.safetensors"))
-    pt_path = None
-
-    if len(found_pts) == 1:
-        pt_path = found_pts[0]
-    elif len(found_safetensors) == 1:
-        pt_path = found_safetensors[0]
-    else:
-        if path_to_model.name.lower().startswith('llama-7b'):
-            pt_model = f'llama-7b-{shared.args.wbits}bit'
-        elif path_to_model.name.lower().startswith('llama-13b'):
-            pt_model = f'llama-13b-{shared.args.wbits}bit'
-        elif path_to_model.name.lower().startswith('llama-30b'):
-            pt_model = f'llama-30b-{shared.args.wbits}bit'
-        elif path_to_model.name.lower().startswith('llama-65b'):
-            pt_model = f'llama-65b-{shared.args.wbits}bit'
+    if model_type == 'llama':
+        if not shared.args.gptq_pre_layer:
+            load_quant = llama.load_quant
         else:
-            pt_model = f'{model_name}-{shared.args.wbits}bit'
+            load_quant = llama_inference_offload.load_quant
+    elif model_type == 'opt':
+        load_quant = opt.load_quant
+    elif model_type == 'gptneox':
+        load_quant = gptneox.load_quant
+    elif model_type == 'gptj':
+        load_quant = gptj.load_quant
+    else:
+        print("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj', 'gptneox' are supported")
+        exit()
+    path_to_model = Path(f'models/{model_name}')
+    pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
 
         # Try to find the .safetensors or .pt both in the model dir and in the subfolder
-        for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
+    for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
             if path.exists():
                 print(f"Found {path}")
                 pt_path = path
                 break
 
     if not pt_path:
-        print("Could not find the quantized model in .pt or .safetensors format, exiting...")
+        print(f"Could not find {pt_model}, exiting...")
         exit()
 
-    # qwopqwop200's offload
-    if model_type == 'llama' and shared.args.pre_layer:
-        model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, shared.args.pre_layer)
-    else:
-        threshold = False if model_type == 'gptj' else 128
-        model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
+    if shared.args.autograd:
+      import autograd_4bit
+      from autograd_4bit import Autograd4bitQuantLinear
+      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
+      if (model_type== 'llama'):
+            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}" )
+      else:
+            model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}" )
 
+      print (shared.args.lora, shared.lora_name)
+
+      if not shared.args.lora or shared.lora_name == "None":
+         print('Apply auto switch and half. Lora:', shared.lora_name)
+         for n, m in model.named_modules():
+           if isinstance(m, Autograd4bitQuantLinear):
+              m.zeros = m.zeros.half()
+              m.scales = m.scales.half()
+              m.bias = m.bias.half()
+         autograd_4bit.use_new = True
+         autograd_4bit.auto_switch = True
+       
+    # qwopqwop200's offload
+    elif shared.args.gptq_pre_layer:
+        model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits, shared.args.gptq_pre_layer)
+    else:
+        model = load_quant(str(path_to_model), str(pt_path), shared.args.gptq_bits)
+        print ('Load Quant')
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory:
             memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))

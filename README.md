@@ -1,10 +1,55 @@
-# Text generation web UI Nothing here yet.
+# Text generation web UI Testing
+### Here there be dragons.
 
-A gradio web UI for running Large Language Models like LLaMA, llama.cpp, GPT-J, OPT, and GALACTICA.
 
-Its goal is to become the [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) of text generation.
+- Allow 4bit loras and use of the faster --autograd implementation.
+- Use GPT-J 4-bits (pre group size)
+- GPT-NeoXT 4-bits (pre group size) - oasst tested
+- 8 bit threshold hardcoded to 1.5 for now (Pre 7.0 compute)
+- load 4-bit lora from web ui
+- compare original (v1) load_quant vs autograd
+- Use old GPTQ v1 models
 
-[[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
+#### Depends on:
+https://github.com/Ph0rk0z/GPTQ-Merged
+
+https://github.com/Curlypla/peft-GPTQ
+
+4/8/23 - Update transformers!
+```
+pip install tokenizers==0.13.3
+pip install protobuf==3.20.0
+pip install git+https://github.com/huggingface/transformers
+```
+
+
+#### Why?
+
+* 13b and 30b llama response times for me become usable with a lora or not.
+* Changes aren't so clean to be accepted as a p/r
+
+#### How?
+
+* Clone and re-use your oobabooga/text-generation-webui conda environment.
+* Build GPTQ kernel with python setup.py install after cloing into repositories/
+* Also build and install patched PEFT.
+
+#### Windows?
+
+* I don't know, can't use it. Try WSL
+
+#### Credits
+
+* https://github.com/johnsmith0031/alpaca_lora_4bit
+* https://github.com/0cc4m/GPTQ-for-LLaMa
+
+#### Example Commands
+```
+python server.py --model llama-30b --chat --autograd --wbits 4 
+python server.py --model opt-13b --chat --autograd --wbits 4 --lora opt-13b-lora-1.0ep
+python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox
+```
+
 
 |![Image1](https://github.com/oobabooga/screenshots/raw/main/qa.png) | ![Image2](https://github.com/oobabooga/screenshots/raw/main/cai3.png) |
 |:---:|:---:|
@@ -78,7 +123,15 @@ Source: https://educe-ubc.github.io/conda.html
 
 #### 1. Create a new conda environment
 
-```
+```A gradio web UI for running Large Language Models like LLaMA, llama.cpp, GPT-J, OPT, and GALACTICA.
+41
+​
+42
+​
+43
+[[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
+44
+
 conda create -n textgen python=3.10.9
 conda activate textgen
 ```

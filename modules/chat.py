@@ -256,6 +256,7 @@ def clear_chat_log(name1, name2, greeting, mode):
     if greeting != '':
         shared.history['internal'] += [['<|BEGIN-VISIBLE-CHAT|>', greeting]]
         shared.history['visible'] += [['', apply_extensions(greeting, "output")]]
+        #shared.history['internal'] = shared.history['internal'][:i+1]
 
     return chat_html_wrapper(shared.history['visible'], name1, name2, mode)
 
@@ -404,6 +405,7 @@ def load_character(character, name1, name2, mode):
 
         if 'example_dialogue' in data:
             context += f"{data['example_dialogue'].strip()}\n"
+            #shared.history['internal'] = tokenize_dialogue(data['example_dialogue'], name1, name2)
         if greeting_field in data:
             greeting = data[greeting_field]
         if 'end_of_turn' in data:
