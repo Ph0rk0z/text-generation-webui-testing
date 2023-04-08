@@ -15,12 +15,11 @@ import gradio as gr
 from PIL import Image
 
 import modules.extensions as extensions_module
-from modules import chat, shared, training, ui, api
+from modules import api, chat, shared, training, ui
 from modules.html_generator import chat_html_wrapper
 from modules.LoRA import add_lora_to_model
-from modules.models import load_model, load_soft_prompt
-from modules.text_generation import (clear_torch_cache, generate_reply,
-                                     stop_everything_event)
+from modules.models import load_model, load_soft_prompt, unload_model
+from modules.text_generation import generate_reply, stop_everything_event
 
 # Loading custom settings
 settings_file = None
@@ -77,11 +76,6 @@ def get_available_softprompts():
 
 def get_available_loras():
     return ['None'] + sorted([item.name for item in list(Path(shared.args.lora_dir).glob('*')) if not item.name.endswith(('.txt', '-np', '.pt', '.json'))], key=str.lower)
-
-
-def unload_model():
-    shared.model = shared.tokenizer = None
-    clear_torch_cache()
 
 
 def load_model_wrapper(selected_model):
@@ -330,7 +324,7 @@ def create_interface():
                 shared.gradio['display'] = gr.HTML(value=chat_html_wrapper(shared.history['visible'], shared.settings['name1'], shared.settings['name2'], 'cai-chat'))
                 shared.gradio['textbox'] = gr.Textbox(label='Input')
                 with gr.Row():
-                    shared.gradio['Generate'] = gr.Button('Generate')
+                    shared.gradio['Generate'] = gr.Button('Generate', elem_id='Generate')
                     shared.gradio['Stop'] = gr.Button('Stop', elem_id="stop")
                 with gr.Row():
                     shared.gradio['Impersonate'] = gr.Button('Impersonate')
@@ -541,7 +535,7 @@ def create_interface():
             shared.gradio['interface_modes_menu'] = gr.Dropdown(choices=modes, value=current_mode, label="Mode")
             shared.gradio['extensions_menu'] = gr.CheckboxGroup(choices=get_available_extensions(), value=shared.args.extensions, label="Available extensions")
             shared.gradio['bool_menu'] = gr.CheckboxGroup(choices=bool_list, value=bool_active, label="Boolean command-line flags")
-            shared.gradio['reset_interface'] = gr.Button("Apply and restart the interface", type="primary")
+            shared.gradio['reset_interface'] = gr.Button("Apply and restart the interface")
 
             shared.gradio['reset_interface'].click(set_interface_arguments, [shared.gradio[k] for k in ['interface_modes_menu', 'extensions_menu', 'bool_menu']], None)
             shared.gradio['reset_interface'].click(lambda: None, None, None, _js='() => {document.body.innerHTML=\'<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>\'; setTimeout(function(){location.reload()},2500); return []}')
