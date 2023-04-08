@@ -14,6 +14,14 @@ https://github.com/Ph0rk0z/GPTQ-Merged
 
 https://github.com/Curlypla/peft-GPTQ
 
+4/8/23 - Update transformers!
+```
+pip install tokenizers==0.13.3
+pip install protobuf==3.20.0
+pip install git+https://github.com/huggingface/transformers
+```
+
+
 #### Why?
 
 * 13b and 30b llama response times for me become usable with a lora or not.
