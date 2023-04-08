@@ -1,11 +1,13 @@
-# Text generation web UI Here there be dragons.
+# Text generation web UI Testing
+### Here there be dragons.
 
 - Allow 4bit loras and use of the faster --autograd implementation.
 - Use GPT-J 4-bits (pre group size)
 - GPT-NeoXT 4-bits (pre group size) - oasst tested
-- 8 bit threshold hardcoded to 1.5 for now
+- 8 bit threshold hardcoded to 1.5 for now (Pre 7.0 compute)
 - load 4-bit lora from web ui
-- compare original load_quant vs new implementation
+- compare original (v1) load_quant vs autograd
+- Use old GPTQ v1 models
 
 #### Depends on:
 https://github.com/Ph0rk0z/GPTQ-Merged
@@ -32,10 +34,13 @@ https://github.com/Curlypla/peft-GPTQ
 * https://github.com/johnsmith0031/alpaca_lora_4bit
 * https://github.com/0cc4m/GPTQ-for-LLaMa
 
-A gradio web UI for running Large Language Models like LLaMA, llama.cpp, GPT-J, OPT, and GALACTICA.
+#### Example Commands
+```
+python server.py --model llama-30b --chat --autograd --wbits 4 
+python server.py --model opt-13b --chat --autograd --wbits 4 --lora opt-13b-lora-1.0ep
+python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox
+```
 
-
-[[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
 
 |![Image1](https://github.com/oobabooga/screenshots/raw/main/qa.png) | ![Image2](https://github.com/oobabooga/screenshots/raw/main/cai3.png) |
 |:---:|:---:|
@@ -109,7 +114,15 @@ Source: https://educe-ubc.github.io/conda.html
 
 #### 1. Create a new conda environment
 
-```
+```A gradio web UI for running Large Language Models like LLaMA, llama.cpp, GPT-J, OPT, and GALACTICA.
+41
+​
+42
+​
+43
+[[Try it on Google Colab]](https://colab.research.google.com/github/oobabooga/AI-Notebooks/blob/main/Colab-TextGen-GPU.ipynb)
+44
+
 conda create -n textgen python=3.10.9
 conda activate textgen
 ```
