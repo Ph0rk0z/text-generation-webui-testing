@@ -1,0 +1,3 @@
+[submodule "repositories/peft-GPTQ"]
+	path = repositories/peft-GPTQ
+	url = https://github.com/Curlypla/peft-GPTQ
