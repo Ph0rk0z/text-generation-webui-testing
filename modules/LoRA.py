@@ -6,13 +6,6 @@ import modules.shared as shared
 from modules.models import reload_model
 
 
-def reload_model():
-    shared.lora_name = shared.args.lora = None
-    shared.model = shared.tokenizer = None
-    clear_torch_cache()
-    shared.model, shared.tokenizer = load_model(shared.model_name)
-
-
 def add_lora_to_model(lora_name):
 
     if not(shared.args.autograd):
@@ -21,7 +14,9 @@ def add_lora_to_model(lora_name):
     # If a LoRA had been previously loaded, or if we want
     # to unload a LoRA, reload the model
     if shared.lora_name != "None" or lora_name == "None":
+        shared.lora_name = shared.args.lora = None
         reload_model()
+        
     shared.lora_name = lora_name
     if shared.args.autograd and shared.lora_name != "None":
        import sys
