@@ -50,7 +50,7 @@ def load_quantized(model_name):
     pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
 
         # Try to find the .safetensors or .pt both in the model dir and in the subfolder
-        for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
+    for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
             if path.exists():
                 print(f"Found {path}")
                 pt_path = path
@@ -63,8 +63,11 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      from autograd_4bit import load_auto_model_4bit_low_ram
-      model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}" )
+      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
+      if (model_type== 'llama'):
+            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}" )
+      else:
+            model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}" )
 
       print (shared.args.lora, shared.lora_name)
 
