@@ -3,8 +3,7 @@ from pathlib import Path
 import torch
 
 import modules.shared as shared
-from modules.models import load_model
-from modules.text_generation import clear_torch_cache
+from modules.models import reload_model
 
 
 def reload_model():
@@ -66,3 +65,4 @@ def add_lora_to_model(lora_name):
                      shared.model = shared.model.to(device)
                  else:
                      shared.model = shared.model.cuda()
+

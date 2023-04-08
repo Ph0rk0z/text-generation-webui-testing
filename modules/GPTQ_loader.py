@@ -1,3 +1,4 @@
+import inspect
 import re
 import sys
 from pathlib import Path
@@ -14,6 +15,8 @@ import llama
 import opt
 import gptneox
 import gptj
+
+
 
 def load_quantized(model_name):
     if not(shared.args.gptq_bits):
@@ -46,13 +49,12 @@ def load_quantized(model_name):
     path_to_model = Path(f'models/{model_name}')
     pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
 
-    # Try to find the .safetensors or .pt both in models/ and in the subfolder
-    pt_path = None
-    for path in [Path(p+ext) for ext in ['.safetensors', '.pt'] for p in [f"models/{pt_model}", f"{path_to_model}/{pt_model}"]]:
-        if path.exists():
-            print(f"Found {path}")
-            pt_path = path
-            break
+        # Try to find the .safetensors or .pt both in the model dir and in the subfolder
+        for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
+            if path.exists():
+                print(f"Found {path}")
+                pt_path = path
+                break
 
     if not pt_path:
         print(f"Could not find {pt_model}, exiting...")
@@ -84,7 +86,7 @@ def load_quantized(model_name):
         print ('Load Quant')
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory:
-            memory_map = list(map(lambda x : x.strip(), shared.args.gpu_memory))
+            memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
             max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
             max_memory = {}
             for i in range(len(memory_map)):
