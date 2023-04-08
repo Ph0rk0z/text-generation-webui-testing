@@ -21,7 +21,7 @@ def add_lora_to_model(lora_name):
     if shared.args.autograd and shared.lora_name != "None":
        import sys
 
-       sys.path.insert(0, 'repositories/GPTQ-Merged')
+       sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
        import autograd_4bit, quant
        from autograd_4bit import Autograd4bitQuantLinear
        
@@ -33,7 +33,8 @@ def add_lora_to_model(lora_name):
        
        for n, m in shared.model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear) or isinstance(m, Linear4bitLt):
-               m.zeros = m.zeros.half()
+               if (shared.args.groupsize):
+                   m.zeros = m.zeros.half()
                m.scales = m.scales.half()
                m.bias = m.bias.half()
        autograd_4bit.use_new = True

@@ -6,7 +6,7 @@ import traceback
 from pathlib import Path
 
 #For GPTQ and autograd
-sys.path.insert(0, 'repositories/GPTQ-Merged')
+sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
 sys.path.insert(0, 'repositories/peft-GPTQ/src')
 
 import gradio as gr
