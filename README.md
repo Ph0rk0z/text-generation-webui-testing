@@ -2,16 +2,20 @@
 ### Here there be dragons.
 
 
-- Allow 4bit loras and use of the faster --autograd implementation.
-- Use GPT-J 4-bits (pre group size)
-- GPT-NeoXT 4-bits (pre group size) - oasst tested
+- Allow 4bit loras and use of the --autograd implementation.
+- Use GPT-J 4-bits (GPTQv1/v2)
+- GPT-NeoXT 4-bits (GPTQv1/v2)
 - 8 bit threshold hardcoded to 1.5 for now (Pre 7.0 compute)
 - load 4-bit lora from web ui
-- compare original (v1) load_quant vs autograd
-- Use old GPTQ v1 models
+- V1 Models work in --autograd
+- V2 Models work in both.
+- Offloading is untested
+- Probably not as fast as the old version (still figuring this out)
+- 4bit loras only work in autograd
+
 
 #### Depends on:
-https://github.com/Ph0rk0z/GPTQ-Merged
+https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 https://github.com/Curlypla/peft-GPTQ
 
@@ -21,7 +25,10 @@ pip install tokenizers==0.13.3
 pip install protobuf==3.20.0
 pip install git+https://github.com/huggingface/transformers
 ```
-
+Repos are linked as submodules.. you may have to update them: https://stackoverflow.com/a/1032653
+```
+git submodule update --remote
+```
 
 #### Why?
 
@@ -48,6 +55,9 @@ pip install git+https://github.com/huggingface/transformers
 python server.py --model llama-30b --chat --autograd --wbits 4 
 python server.py --model opt-13b --chat --autograd --wbits 4 --lora opt-13b-lora-1.0ep
 python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox
+python server.py --model llama-7b-4bit-128g --chat --groupsize 128 --wbits 4 --model_type llama
+python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  --wbits 4 --model_type llama
+
 ```
 
 
