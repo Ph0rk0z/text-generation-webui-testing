@@ -21,7 +21,7 @@ https://github.com/Curlypla/peft-GPTQ
 
 4/8/23 - Update transformers!
 ```
-pip install tokenizers==0.13.3
+pip install tokenizers==0.13.1
 pip install protobuf==3.20.0
 pip install git+https://github.com/huggingface/transformers
 ```
