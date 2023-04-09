@@ -113,9 +113,9 @@ def load_quantized(model_name):
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
       if (model_type== 'llama'):
-            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize )
+            model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, shared.args.v1 )
       else:
-            model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize )
+            model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, shared.args.v1 )
 
       print (shared.args.lora, shared.lora_name)
 
@@ -123,7 +123,7 @@ def load_quantized(model_name):
          print('Apply auto switch and half. Lora:', shared.lora_name)
          for n, m in model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear):
-              if (shared.args.groupsize == -1):
+              if (shared.args.v1 == True):
                   m.zeros = m.zeros.half()
               m.scales = m.scales.half()
               m.bias = m.bias.half()
@@ -134,7 +134,7 @@ def load_quantized(model_name):
     elif model_type == 'llama' and shared.args.pre_layer:
         model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, shared.args.pre_layer)
     else:
-        threshold = False if model_type == 'gptj' else 128
+        threshold = False if model_type == ('gptj' or 'gptneox') else 128
         model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
 
         # accelerate offload (doesn't work properly)

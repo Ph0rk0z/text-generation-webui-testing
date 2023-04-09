@@ -110,6 +110,9 @@ parser.add_argument('--gptq-bits', type=int, default=0, help='DEPRECATED: use --
 parser.add_argument('--gptq-model-type', type=str, help='DEPRECATED: use --model_type instead.')
 parser.add_argument('--gptq-pre-layer', type=int, default=0, help='DEPRECATED: use --pre_layer instead.')
 parser.add_argument('--autograd', action='store_true', default=False, help='Use the autograd GPTQ loader for llama and llama lora')
+parser.add_argument('--v1', action='store_true', default=False, help='Explicity declare GPTQv1 Model to Autograd')
+
+
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
