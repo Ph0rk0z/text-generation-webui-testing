@@ -11,6 +11,7 @@ requests
 rwkv==0.7.3
 safetensors==0.3.0
 sentencepiece
+tokenizers==0.13.1
 pyyaml
 tqdm
 git+https://github.com/huggingface/transformers
