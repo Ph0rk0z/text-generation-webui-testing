@@ -58,7 +58,7 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
 
     del layers
 
-    print('Loading model ...')
+    print('Loading GPTQ model ...')
     if checkpoint.endswith('.safetensors'):
         from safetensors.torch import load_file as safe_load
         model.load_state_dict(safe_load(checkpoint), strict=False)
