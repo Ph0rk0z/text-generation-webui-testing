@@ -7,7 +7,7 @@
 - GPT-NeoXT 4-bits (GPTQv1/v2)
 - 8 bit threshold hardcoded to 1.5 for now (Pre 7.0 compute)
 - load 4-bit lora from web ui
-- V1 Models work in --autograd
+- V1 Models work in --autograd (declare with --v1)
 - V2 Models work in both.
 - Offloading is untested
 - Probably not as fast as the old version (still figuring this out)
@@ -55,6 +55,7 @@ git submodule update --remote
 python server.py --model llama-30b --chat --autograd --wbits 4 
 python server.py --model opt-13b --chat --autograd --wbits 4 --lora opt-13b-lora-1.0ep
 python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox
+python server.py --model oasst-sft-1-pythia-12b --chat --autograd --wbits 4 --model_type gptneox --v1
 python server.py --model llama-7b-4bit-128g --chat --groupsize 128 --wbits 4 --model_type llama
 python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  --wbits 4 --model_type llama
 
