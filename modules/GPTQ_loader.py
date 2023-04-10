@@ -113,6 +113,11 @@ def load_quantized(model_name):
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
       if (model_type== 'llama'):
+
+
+            #from monkeypatch.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+            #replace_llama_attn_with_flash_attn()
+
             model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
       else:
             model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
