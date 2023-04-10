@@ -93,7 +93,7 @@ def load_quantized(model_name):
     if len(found_pts) > 0:
         pt_path = found_pts[-1]
     elif len(found_safetensors) > 0:
-        pt_path = found_safetensors[-1]]
+        pt_path = found_safetensors[-1]
     else: 
         pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
     
