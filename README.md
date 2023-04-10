@@ -19,6 +19,15 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 https://github.com/Curlypla/peft-GPTQ
 
+4/10/23
+```
+pip install deepspeed -U
+pip install xmformers
+Xformers install will upgrade torch to 2.0
+YOU WILL HAVE TO RECOMPILE YOUR CUDA KERNELS!!
+```
+
+
 4/8/23 - Update transformers!
 ```
 pip install tokenizers==0.13.1
@@ -280,6 +289,8 @@ Optionally, you can use the following command-line flags:
 | `--load-in-8bit`                            | Load the model with 8-bit precision.|
 | `--bf16`                                    | Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU. |
 | `--no-cache`                                | Set `use_cache` to False while generating text. This reduces the VRAM usage a bit with a performance cost. |
+| `--xformers`                                | Use xformer's memory efficient attention. This should increase your tokens/s. |
+| `--sdp-attention`                           | Use torch 2.0's sdp attention. |
 
 #### llama.cpp
 

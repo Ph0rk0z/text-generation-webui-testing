@@ -90,23 +90,25 @@ def load_quantized(model_name):
     found_safetensors = list(path_to_model.glob("*.safetensors"))
     pt_path = None
     
-    if len(found_pts) == 1:
-        pt_path = found_pts[0]
-    elif len(found_safetensors) == 1:
-        pt_path = found_safetensors[0]
+    if len(found_pts) > 0:
+        pt_path = found_pts[-1]
+    elif len(found_safetensors) > 0:
+        pt_path = found_safetensors[-1]
     else: 
         pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
     
       # Try to find the .safetensors or .pt both in the model dir and in the subfolder
+
         for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
             if path.exists():
-                print(f"Found {path}")
                 pt_path = path
                 break
 
     if not pt_path:
         print(f"Could not find {pt_model}, exiting...")
         exit()
+    else:
+        print(f"Found the following quantized model: {pt_path}")
 
     if shared.args.autograd:
       import autograd_4bit
