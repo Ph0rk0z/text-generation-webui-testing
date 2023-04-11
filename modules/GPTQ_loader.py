@@ -9,12 +9,12 @@ import transformers
 import modules.shared as shared
 
 from transformers import AutoConfig, AutoModelForCausalLM
-#import llama_inference_offload
 
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/gptq_llama")))
 
 #from gptq_llama import quant, modelutils
+from gptq_llama import llama_inference_offload
 from modelutils import find_layers
 from quant import make_quant
 
@@ -85,6 +85,13 @@ def load_quantized(model_name):
     else:
         model_type = shared.args.gptq_model_type.lower()
 
+    if shared.args.pre_layer and model_type == 'llama':
+        load_quant = llama_inference_offload.load_quant
+    elif model_type in ('llama', 'opt', 'gptj', 'gptneox'):
+        if shared.args.pre_layer:
+            print("Warning: ignoring --pre_layer because it only works for llama model type.")
+        load_quant = _load_quant
+
     path_to_model = Path(f'models/{model_name}')
     found_pts = list(path_to_model.glob("*.pt"))
     found_safetensors = list(path_to_model.glob("*.safetensors"))
@@ -145,10 +152,10 @@ def load_quantized(model_name):
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:
-        model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, shared.args.pre_layer)
+        model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, shared.args.pre_layer)
     else:
         threshold = False if model_type == ('gptj' or 'gptneox') else 128
-        model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
+        model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
 
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory:
