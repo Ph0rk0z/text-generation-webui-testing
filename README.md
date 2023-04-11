@@ -86,7 +86,7 @@ python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  
 * Dropdown menu for switching between models
 * Notebook mode that resembles OpenAI's playground
 * Chat mode for conversation and role playing
-* Instruct mode compatible with Alpaca and Open Assistant formats **\*NEW!\***
+* Instruct mode compatible with Alpaca, Vicuna, and Open Assistant formats **\*NEW!\***
 * Nice HTML output for GPT-4chan
 * Markdown output for [GALACTICA](https://github.com/paperswithcode/galai), including LaTeX rendering
 * [Custom chat characters](https://github.com/oobabooga/text-generation-webui/wiki/Custom-chat-characters)
