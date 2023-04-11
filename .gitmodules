@@ -1,6 +1,6 @@
-[submodule "repositories/peft-GPTQ"]
-	path = repositories/peft-GPTQ
-	url = https://github.com/Curlypla/peft-GPTQ
+[submodule "repositories/peft"]
+	path = repositories/peft
+	url = https://github.com/sterlind/peft
     branch = main
 [submodule "repositories/GPTQ-Merged"]
 	path = repositories/GPTQ-Merged
