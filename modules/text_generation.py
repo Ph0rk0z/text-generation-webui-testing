@@ -69,6 +69,7 @@ def generate_softprompt_input_tensors(input_ids):
     # filler_input_ids += shared.model.config.bos_token_id # setting dummy input_ids to bos tokens
     return inputs_embeds, filler_input_ids
 
+
 # Removes empty replies from gpt4chan outputs
 def fix_gpt4chan(s):
     for i in range(10):
@@ -76,6 +77,7 @@ def fix_gpt4chan(s):
         s = re.sub("--- [0-9]*\n *\n---", "---", s)
         s = re.sub("--- [0-9]*\n\n\n---", "---", s)
     return s
+
 
 # Fix the LaTeX equations in galactica
 def fix_galactica(s):
@@ -117,9 +119,9 @@ def stop_everything_event():
     shared.stop_everything = True
 
 
-def generate_reply(question, generate_state, eos_token=None, stopping_strings=[]):
+def generate_reply(question, state, eos_token=None, stopping_strings=[]):
     clear_torch_cache()
-    seed = set_manual_seed(generate_state['seed'])
+    seed = set_manual_seed(state['seed'])
     shared.stop_everything = False
     generate_params = {}
     t0 = time.time()
@@ -134,8 +136,8 @@ def generate_reply(question, generate_state, eos_token=None, stopping_strings=[]
     # separately and terminate the function call earlier
     if any((shared.is_RWKV, shared.is_llamacpp)):
         for k in ['temperature', 'top_p', 'top_k', 'repetition_penalty']:
-            generate_params[k] = generate_state[k]
-        generate_params['token_count'] = generate_state['max_new_tokens']
+            generate_params[k] = state[k]
+        generate_params['token_count'] = state['max_new_tokens']
         try:
             if shared.args.no_stream:
                 reply = shared.model.generate(context=question, **generate_params)
@@ -164,7 +166,7 @@ def generate_reply(question, generate_state, eos_token=None, stopping_strings=[]
             print(f'Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})')
             return
 
-    input_ids = encode(question, generate_state['max_new_tokens'], add_bos_token=generate_state['add_bos_token'])
+    input_ids = encode(question, state['max_new_tokens'], add_bos_token=state['add_bos_token'])
     original_input_ids = input_ids
     output = input_ids[0]
 
@@ -172,20 +174,24 @@ def generate_reply(question, generate_state, eos_token=None, stopping_strings=[]
     eos_token_ids = [shared.tokenizer.eos_token_id] if shared.tokenizer.eos_token_id is not None else []
     if eos_token is not None:
         eos_token_ids.append(int(encode(eos_token)[0][-1]))
+
+    # Handling the stopping strings
     stopping_criteria_list = transformers.StoppingCriteriaList()
-    if type(stopping_strings) is list and len(stopping_strings) > 0:
-        t = [encode(string, 0, add_special_tokens=False) for string in stopping_strings]
-        stopping_criteria_list.append(_SentinelTokenStoppingCriteria(sentinel_token_ids=t, starting_idx=len(input_ids[0])))
+    for st in [stopping_strings, state['custom_stopping_strings']]:
+        if type(st) is list and len(st) > 0:
+            sentinel_token_ids = [encode(string, 0, add_special_tokens=False) for string in st]
+            stopping_criteria_list.append(_SentinelTokenStoppingCriteria(sentinel_token_ids=sentinel_token_ids, starting_idx=len(input_ids[0])))
+            break
 
     if not shared.args.flexgen:
         for k in ['max_new_tokens', 'do_sample', 'temperature', 'top_p', 'typical_p', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping']:
-            generate_params[k] = generate_state[k]
+            generate_params[k] = state[k]
         generate_params['eos_token_id'] = eos_token_ids
         generate_params['stopping_criteria'] = stopping_criteria_list
     else:
         for k in ['max_new_tokens', 'do_sample', 'temperature']:
-            generate_params[k] = generate_state[k]
-        generate_params['stop'] = generate_state['eos_token_ids'][-1]
+            generate_params[k] = state[k]
+        generate_params['stop'] = state['eos_token_ids'][-1]
         if not shared.args.no_stream:
             generate_params['max_new_tokens'] = 8
 
@@ -248,7 +254,7 @@ def generate_reply(question, generate_state, eos_token=None, stopping_strings=[]
 
         # Stream the output naively for FlexGen since it doesn't support 'stopping_criteria'
         else:
-            for i in range(generate_state['max_new_tokens'] // 8 + 1):
+            for i in range(state['max_new_tokens'] // 8 + 1):
                 clear_torch_cache()
                 with torch.no_grad():
                     output = shared.model.generate(**generate_params)[0]
