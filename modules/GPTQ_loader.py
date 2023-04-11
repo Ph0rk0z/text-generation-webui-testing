@@ -123,10 +123,17 @@ def load_quantized(model_name):
     if shared.args.autograd:
       import autograd_4bit
       from autograd_4bit import Autograd4bitQuantLinear
-      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
+      from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram, load_llama_model_4bit_low_ram_and_offload
       if (model_type== 'llama'):
-            
-
+         if shared.args.gpu_memory:
+            memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
+            max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
+            max_memory = {}
+            for i in range(len(memory_map)):
+                max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
+            max_memory['cpu'] = max_cpu_memory
+            model, tokenizer = load_llama_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=max_memory, is_v1_model=shared.args.v1)  
+         else:
             #from monkeypatch.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
             #replace_llama_attn_with_flash_attn()
 
