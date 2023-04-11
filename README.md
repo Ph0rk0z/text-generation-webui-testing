@@ -17,7 +17,14 @@
 #### Depends on:
 https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
-https://github.com/Curlypla/peft-GPTQ
+https://github.com/sterlind/peft
+
+4/11/23
+```
+Update to new PEFT version
+https://github.com/sterlind/peft
+```
+
 
 4/10/23
 ```

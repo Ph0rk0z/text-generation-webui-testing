@@ -25,7 +25,7 @@ def add_lora_to_model(lora_name):
        import autograd_4bit, quant
        from autograd_4bit import Autograd4bitQuantLinear
        
-       sys.path.insert(0, 'repositories/peft-GPTQ/src')
+       sys.path.insert(0, 'repositories/peft/src')
        from peft import PeftModel
        from peft.tuners.lora import Linear4bitLt
        print('Loading', lora_name)
