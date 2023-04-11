@@ -9,7 +9,9 @@
 - load 4-bit lora from web ui
 - V1 Models work in --autograd (declare with --v1)
 - V2 Models work in both.
-- Offloading is untested
+- Offloading works in autograd with --gpu-memory but doesn't 100% hodl while generating
+- Offloading for llama GPTQ works
+- Offloading for all other GPTQ models getting worked on
 - Probably not as fast as the old version (still figuring this out)
 - 4bit loras only work in autograd
 
