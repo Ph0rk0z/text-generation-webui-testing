@@ -33,7 +33,7 @@ def add_lora_to_model(lora_name):
        
        for n, m in shared.model.named_modules():
            if isinstance(m, Autograd4bitQuantLinear) or isinstance(m, Linear4bitLt):
-               if (shared.args.groupsize == -1):
+               if (shared.args.v1 == True):
                    m.zeros = m.zeros.half()
                m.scales = m.scales.half()
                m.bias = m.bias.half()
