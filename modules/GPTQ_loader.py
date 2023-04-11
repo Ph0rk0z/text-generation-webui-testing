@@ -115,12 +115,14 @@ def load_quantized(model_name):
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram
       if (model_type== 'llama'):
-
+            
 
             #from monkeypatch.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
             #replace_llama_attn_with_flash_attn()
 
             model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
+            
+
       else:
             model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
 
@@ -136,6 +138,10 @@ def load_quantized(model_name):
               m.bias = m.bias.half()
          autograd_4bit.use_new = True
          autograd_4bit.auto_switch = True
+         #if any((shared.args.xformers, shared.args.sdp_attention)):
+         #   if (model_type== 'llama'):
+         #      from modules import llama_attn_hijack    
+         #      llama_attn_hijack.hijack_llama_attention()
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:

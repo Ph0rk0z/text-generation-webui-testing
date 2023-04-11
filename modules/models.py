@@ -172,7 +172,8 @@ def load_model(model_name):
 
     # Hijack attention with xformers
     if any((shared.args.xformers, shared.args.sdp_attention)):
-        llama_attn_hijack.hijack_llama_attention()
+      #if not(shared.args.autograd): #goes in a diff place
+         llama_attn_hijack.hijack_llama_attention()
 
     # Loading the tokenizer
     if any((k in shared.model_name.lower() for k in ['gpt4chan', 'gpt-4chan'])) and Path(f"{shared.args.model_dir}/gpt-j-6B/").exists():
