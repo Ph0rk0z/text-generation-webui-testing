@@ -24,7 +24,6 @@ from modules.LoRA import add_lora_to_model
 from modules.models import load_model, load_soft_prompt, unload_model
 from modules.text_generation import generate_reply, stop_everything_event
 
-
 # Loading custom settings
 settings_file = None
 if shared.args.settings is not None and Path(shared.args.settings).exists():
@@ -263,7 +262,7 @@ def create_settings_menus(default_preset):
             with gr.Box():
                 gr.Markdown('Contrastive search')
                 shared.gradio['penalty_alpha'] = gr.Slider(0, 5, value=generate_params['penalty_alpha'], label='penalty_alpha')
-            with gr.Box():
+
                 gr.Markdown('Beam search (uses a lot of VRAM)')
                 with gr.Row():
                     with gr.Column():
@@ -272,10 +271,11 @@ def create_settings_menus(default_preset):
                         shared.gradio['length_penalty'] = gr.Slider(-5, 5, value=generate_params['length_penalty'], label='length_penalty')
                 shared.gradio['early_stopping'] = gr.Checkbox(value=generate_params['early_stopping'], label='early_stopping')
 
-            with gr.Row():
-                shared.gradio['add_bos_token'] = gr.Checkbox(value=shared.settings['add_bos_token'], label='Add the bos_token to the beginning of prompts', info='Disabling this can make the replies more creative.')
-
-            with gr.Row():
+            with gr.Group():
+                with gr.Row():
+                    shared.gradio['add_bos_token'] = gr.Checkbox(value=shared.settings['add_bos_token'], label='Add the bos_token to the beginning of prompts', info='Disabling this can make the replies more creative.')
+                    shared.gradio['ban_eos_token'] = gr.Checkbox(value=shared.settings['ban_eos_token'], label='Ban the eos_token', info='This forces the model to never end the generation prematurely.')
+                shared.gradio['truncation_length'] = gr.Slider(value=shared.settings['truncation_length'], minimum=shared.settings['truncation_length_min'], maximum=shared.settings['truncation_length_max'], step=1, label='Truncate the prompt up to this length', info='The leftmost tokens are removed if the prompt exceeds this length. Most models require this to be at most 2048.')
                 shared.gradio['custom_stopping_strings'] = gr.Textbox(lines=1, value=shared.settings["custom_stopping_strings"] or None, label='Custom stopping strings', info='In addition to the defaults. Written between "" and separated by commas. For instance: "\\nYour Assistant:", "\\nThe assistant:"')
 
     with gr.Accordion('Soft prompt', open=False):
@@ -360,21 +360,6 @@ else:
 title = 'Text generation web UI'
 
 
-def list_interface_input_elements(chat=False):
-    elements = ['max_new_tokens', 'seed', 'temperature', 'top_p', 'top_k', 'typical_p', 'repetition_penalty', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'do_sample', 'penalty_alpha', 'num_beams', 'length_penalty', 'early_stopping', 'add_bos_token', 'custom_stopping_strings']
-    if chat:
-        elements += ['name1', 'name2', 'greeting', 'context', 'end_of_turn', 'chat_prompt_size', 'chat_generation_attempts', 'stop_at_newline', 'mode']
-    return elements
-
-
-def gather_interface_values(*args):
-    output = {}
-    for i, element in enumerate(shared.input_elements):
-        output[element] = args[i]
-    output['custom_stopping_strings'] = eval(f"[{output['custom_stopping_strings']}]")
-    return output
-
-
 def create_interface():
     gen_events = []
     if shared.args.extensions is not None and len(shared.args.extensions) > 0:
@@ -383,7 +368,7 @@ def create_interface():
     with gr.Blocks(css=ui.css if not shared.is_chat() else ui.css + ui.chat_css, analytics_enabled=False, title=title) as shared.gradio['interface']:
         if shared.is_chat():
 
-            shared.input_elements = list_interface_input_elements(chat=True)
+            shared.input_elements = ui.list_interface_input_elements(chat=True)
             shared.gradio['interface_state'] = gr.State({k: None for k in shared.input_elements})
             shared.gradio['Chat input'] = gr.State()
 
@@ -398,13 +383,15 @@ def create_interface():
                     shared.gradio['Continue'] = gr.Button('Continue')
                     shared.gradio['Impersonate'] = gr.Button('Impersonate')
                 with gr.Row():
-                    shared.gradio['Copy last reply'] = gr.Button('Copy last reply')
+                    shared.gradio['Send dummy message'] = gr.Button('Send dummy message')
+                    shared.gradio['Send dummy reply'] = gr.Button('Send dummy reply')
                     shared.gradio['Replace last reply'] = gr.Button('Replace last reply')
-                    shared.gradio['Remove last'] = gr.Button('Remove last')
-
+                    shared.gradio['Copy last reply'] = gr.Button('Copy last reply')
+                with gr.Row():
                     shared.gradio['Clear history'] = gr.Button('Clear history')
                     shared.gradio['Clear history-confirm'] = gr.Button('Confirm', variant="stop", visible=False)
                     shared.gradio['Clear history-cancel'] = gr.Button('Cancel', visible=False)
+                    shared.gradio['Remove last'] = gr.Button('Remove last')
 
                 shared.gradio["mode"] = gr.Radio(choices=["cai-chat", "chat", "instruct"], value="cai-chat", label="Mode")
                 shared.gradio["Instruction templates"] = gr.Dropdown(choices=get_available_instruction_templates(), label="Instruction template", value="None", visible=False, info="Change this according to the model/LoRA that you are using.")
@@ -466,38 +453,48 @@ def create_interface():
             reload_inputs = [shared.gradio[k] for k in ['name1', 'name2', 'mode']]
 
             gen_events.append(shared.gradio['Generate'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
                 lambda x: (x, ''), shared.gradio['textbox'], [shared.gradio['Chat input'], shared.gradio['textbox']], show_progress=False).then(
                 chat.cai_chatbot_wrapper, shared.input_params, shared.gradio['display'], show_progress=shared.args.no_stream).then(
                 chat.save_history, shared.gradio['mode'], None, show_progress=False)
             )
 
             gen_events.append(shared.gradio['textbox'].submit(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
                 lambda x: (x, ''), shared.gradio['textbox'], [shared.gradio['Chat input'], shared.gradio['textbox']], show_progress=False).then(
                 chat.cai_chatbot_wrapper, shared.input_params, shared.gradio['display'], show_progress=shared.args.no_stream).then(
                 chat.save_history, shared.gradio['mode'], None, show_progress=False)
             )
 
             gen_events.append(shared.gradio['Regenerate'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
                 chat.regenerate_wrapper, shared.input_params, shared.gradio['display'], show_progress=shared.args.no_stream).then(
                 chat.save_history, shared.gradio['mode'], None, show_progress=False)
             )
 
             gen_events.append(shared.gradio['Continue'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
                 chat.continue_wrapper, shared.input_params, shared.gradio['display'], show_progress=shared.args.no_stream).then(
                 chat.save_history, shared.gradio['mode'], None, show_progress=False)
             )
 
             gen_events.append(shared.gradio['Impersonate'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
                 chat.impersonate_wrapper, shared.input_params, shared.gradio['textbox'], show_progress=shared.args.no_stream)
             )
 
             shared.gradio['Replace last reply'].click(
                 chat.replace_last_reply, [shared.gradio[k] for k in ['textbox', 'name1', 'name2', 'mode']], shared.gradio['display'], show_progress=shared.args.no_stream).then(
+                lambda x: '', shared.gradio['textbox'], shared.gradio['textbox'], show_progress=False).then(
+                chat.save_history, shared.gradio['mode'], None, show_progress=False)
+
+            shared.gradio['Send dummy message'].click(
+                chat.send_dummy_message, [shared.gradio[k] for k in ['textbox', 'name1', 'name2', 'mode']], shared.gradio['display'], show_progress=shared.args.no_stream).then(
+                lambda x: '', shared.gradio['textbox'], shared.gradio['textbox'], show_progress=False).then(
+                chat.save_history, shared.gradio['mode'], None, show_progress=False)
+
+            shared.gradio['Send dummy reply'].click(
+                chat.send_dummy_reply, [shared.gradio[k] for k in ['textbox', 'name1', 'name2', 'mode']], shared.gradio['display'], show_progress=shared.args.no_stream).then(
                 lambda x: '', shared.gradio['textbox'], shared.gradio['textbox'], show_progress=False).then(
                 chat.save_history, shared.gradio['mode'], None, show_progress=False)
 
@@ -538,7 +535,7 @@ def create_interface():
             shared.gradio['interface'].load(chat.redraw_html, reload_inputs, shared.gradio['display'], show_progress=True)
 
         elif shared.args.notebook:
-            shared.input_elements = list_interface_input_elements(chat=False)
+            shared.input_elements = ui.list_interface_input_elements(chat=False)
             shared.gradio['interface_state'] = gr.State({k: None for k in shared.input_elements})
             with gr.Tab("Text generation", elem_id="main"):
                 with gr.Row():
@@ -571,20 +568,22 @@ def create_interface():
             output_params = [shared.gradio[k] for k in ['textbox', 'markdown', 'html']]
 
             gen_events.append(shared.gradio['Generate'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)#.then(
+                #None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[0]; element.scrollTop = element.scrollHeight}")
             )
 
             gen_events.append(shared.gradio['textbox'].submit(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)#.then(
+                #None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[0]; element.scrollTop = element.scrollHeight}")
             )
 
             shared.gradio['Stop'].click(stop_everything_event, None, None, queue=False, cancels=gen_events if shared.args.no_stream else None)
             shared.gradio['interface'].load(None, None, None, _js=f"() => {{{ui.main_js}}}")
 
         else:
-            shared.input_elements = list_interface_input_elements(chat=False)
+            shared.input_elements = ui.list_interface_input_elements(chat=False)
             shared.gradio['interface_state'] = gr.State({k: None for k in shared.input_elements})
             with gr.Tab("Text generation", elem_id="main"):
                 with gr.Row():
@@ -615,18 +614,21 @@ def create_interface():
             output_params = [shared.gradio[k] for k in ['output_textbox', 'markdown', 'html']]
 
             gen_events.append(shared.gradio['Generate'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)#.then(
+                #None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[1]; element.scrollTop = element.scrollHeight}")
             )
 
             gen_events.append(shared.gradio['textbox'].submit(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                generate_reply, shared.input_params, output_params, show_progress=shared.args.no_stream)#.then(
+                #None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[1]; element.scrollTop = element.scrollHeight}")
             )
 
             gen_events.append(shared.gradio['Continue'].click(
-                gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
-                generate_reply, [shared.gradio['output_textbox']] + shared.input_params[1:], output_params, show_progress=shared.args.no_stream)
+                ui.gather_interface_values, [shared.gradio[k] for k in shared.input_elements], shared.gradio['interface_state']).then(
+                generate_reply, [shared.gradio['output_textbox']] + shared.input_params[1:], output_params, show_progress=shared.args.no_stream)#.then(
+                #None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[1]; element.scrollTop = element.scrollHeight}")
             )
 
             shared.gradio['Stop'].click(stop_everything_event, None, None, queue=False, cancels=gen_events if shared.args.no_stream else None)
