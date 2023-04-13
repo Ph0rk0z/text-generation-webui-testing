@@ -217,7 +217,7 @@ def download_model_wrapper(repo_id):
 
 # Model parameters: list the relevant interface elements
 def list_model_parameters():
-    parameters = ['cpu_memory', 'auto_devices', 'disk', 'cpu', 'bf16', 'load_in_8bit', 'wbits', 'groupsize', 'model_type', 'pre_layer']
+    parameters = ['cpu_memory', 'auto_devices', 'disk', 'cpu', 'bf16', 'load_in_8bit', 'threshold', 'wbits', 'groupsize', 'model_type', 'pre_layer', 'autograd', 'v1']
     for i in range(torch.cuda.device_count()):
         parameters.append(f'gpu_memory_{i}')
     return parameters
@@ -243,7 +243,7 @@ def update_model_parameters(*args):
             args[i] = -1
         if element == 'model_type' and args[i] == 'None':
             args[i] = None
-        if element in ['wbits', 'groupsize', 'pre_layer']:
+        if element in ['wbits', 'groupsize', 'pre_layer', 'autograd' , 'v1']:
             args[i] = int(args[i])
         elif element == 'cpu_memory' and args[i] is not None:
             args[i] = f"{args[i]}MiB"
@@ -319,6 +319,7 @@ def create_model_menus():
                         components['cpu'] = gr.Checkbox(label="cpu", value=shared.args.cpu)
                         components['bf16'] = gr.Checkbox(label="bf16", value=shared.args.bf16)
                         components['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
+                        components['threshold'] = gr.Slider(label="8bit threshold", minimum=0, maximum=10, value=shared.args.threshold)
 
         with gr.Column():
             with gr.Box():
@@ -329,8 +330,12 @@ def create_model_menus():
                         components['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128], value=shared.args.groupsize if shared.args.groupsize > 0 else "None")
 
                     with gr.Column():
-                        components['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj"], value=shared.args.model_type or "None")
+                        components['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", 
+"gtpneox"], value=shared.args.model_type or "None")
                         components['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer)
+                        components['autograd'] = gr.Checkbox(label="autograd", value=shared.args.autograd)
+                        components['v1'] = gr.Checkbox(label="GPTQv1 Model (Autograd Only)", value=shared.args.v1)
+
 
     with gr.Row():
         with gr.Column():
@@ -422,7 +427,7 @@ def create_settings_menus(default_preset):
 def set_interface_arguments(interface_mode, extensions, bool_active):
     modes = ["default", "notebook", "chat", "cai_chat"]
     cmd_list = vars(shared.args)
-    bool_list = [k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes]
+    bool_list = [k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes + list_model_parameters()]
 
     shared.args.extensions = extensions
     for k in modes[1:]:
