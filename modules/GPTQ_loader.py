@@ -101,7 +101,7 @@ def load_quantized(model_name):
             print("Can't determine model type from model name. Please specify it manually using --model_type argument")
             exit()
     else:
-        model_type = shared.args.model_type_type.lower()
+        model_type = shared.args.model_type.lower()
 
     if shared.args.pre_layer and model_type == 'llama':
         load_quant = llama_inference_offload.load_quant
