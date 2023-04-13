@@ -19,6 +19,27 @@ from gptq_llama import llama_inference_offload
 from modelutils import find_layers
 from quant import make_quant
 
+def finalize_autograd (model):
+    import autograd_4bit
+    from autograd_4bit import Autograd4bitQuantLinear
+    for n, m in model.named_modules():
+       if isinstance(m, Autograd4bitQuantLinear):
+          if (shared.args.v1 == True):
+              m.zeros = m.zeros.half()
+          m.scales = m.scales.half()
+          m.bias = m.bias.half()
+    autograd_4bit.use_new = True
+    autograd_4bit.auto_switch = True
+         #if any((shared.args.xformers, shared.args.sdp_attention)):
+         #   if (model_type== 'llama'):
+         #      from modules import llama_attn_hijack    
+         #      llama_attn_hijack.hijack_llama_attention()
+         #from amp_wrapper import AMPWrapper
+         #wrapper = AMPWrapper(model)
+         #wrapper.apply_generate()
+    print('Apply auto switch and half. Lora:', shared.lora_name)
+
+
 def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head', 'embed_out'], kernel_switch_threshold=128):
 
     def noop(*args, **kwargs):
@@ -155,19 +176,8 @@ def load_quantized(model_name):
       print (shared.args.lora, shared.lora_name)
 
       if not shared.args.lora or shared.lora_name == "None":
-         print('Apply auto switch and half. Lora:', shared.lora_name)
-         for n, m in model.named_modules():
-           if isinstance(m, Autograd4bitQuantLinear):
-              if (shared.args.v1 == True):
-                  m.zeros = m.zeros.half()
-              m.scales = m.scales.half()
-              m.bias = m.bias.half()
-         autograd_4bit.use_new = True
-         autograd_4bit.auto_switch = True
-         #if any((shared.args.xformers, shared.args.sdp_attention)):
-         #   if (model_type== 'llama'):
-         #      from modules import llama_attn_hijack    
-         #      llama_attn_hijack.hijack_llama_attention()
+         finalize_autograd(model)
+         return model #let textgen handle the tokenizer
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:

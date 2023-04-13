@@ -30,16 +30,8 @@ def add_lora_to_model(lora_name):
        from peft.tuners.lora import Linear4bitLt
        print('Loading', lora_name)
        shared.model = PeftModel.from_pretrained(shared.model, Path(f"loras/{lora_name}"), device_map={'': 0}, torch_dtype=torch.float32)
-       
-       for n, m in shared.model.named_modules():
-           if isinstance(m, Autograd4bitQuantLinear) or isinstance(m, Linear4bitLt):
-               if (shared.args.v1 == True):
-                   m.zeros = m.zeros.half()
-               m.scales = m.scales.half()
-               m.bias = m.bias.half()
-       autograd_4bit.use_new = True
-       autograd_4bit.auto_switch = True
-       print('Apply auto switch Lora 4-bit', lora_name)
+       from modules.GPTQ_loader import finalize_autograd
+       finalize_autograd(shared.model)
 
     else:
       if lora_name != "None":
