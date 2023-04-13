@@ -94,7 +94,7 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
 
 
 def load_quantized(model_name):
-    if not shared.args.model_type_type:
+    if not shared.args.model_type:
         # Try to determine model type from model name
         model_type = model_name.split('-')[0].lower()
         if model_type not in ('llama', 'opt', 'gptneox', 'gptj'):
