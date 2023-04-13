@@ -94,18 +94,14 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
 
 
 def load_quantized(model_name):
-    if not(shared.args.gptq_bits):
-       shared.args.gptq_bits = shared.args.wbits
-    if (shared.args.model_type):
-        shared.args.gptq_model_type = shared.args.model_type
-    if not shared.args.gptq_model_type:
+    if not shared.args.model_type_type:
         # Try to determine model type from model name
         model_type = model_name.split('-')[0].lower()
         if model_type not in ('llama', 'opt', 'gptneox', 'gptj'):
             print("Can't determine model type from model name. Please specify it manually using --model_type argument")
             exit()
     else:
-        model_type = shared.args.gptq_model_type.lower()
+        model_type = shared.args.model_type_type.lower()
 
     if shared.args.pre_layer and model_type == 'llama':
         load_quant = llama_inference_offload.load_quant
@@ -126,7 +122,7 @@ def load_quantized(model_name):
     elif len(found_safetensors) > 0:
         pt_path = found_safetensors[-1]
     else: 
-        pt_model = f'{model_name}-{shared.args.gptq_bits}bit'
+        pt_model = f'{model_name}-{shared.args.wbits}bit'
     
       # Try to find the .safetensors or .pt both in the model dir and in the subfolder
 
