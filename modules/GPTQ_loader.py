@@ -133,26 +133,6 @@ def load_quantized(model_name):
             print("Warning: ignoring --pre_layer because it only works for llama or gptj model type.")
         load_quant = _load_quant
 
-#<<<<<<< HEAD
-#    path_to_model = Path(f'models/{model_name}')
-#    found_pts = list(path_to_model.glob("*.pt"))
-#    found_safetensors = list(path_to_model.glob("*.safetensors"))
-#    pt_path = None
-    
-#    if len(found_pts) > 0:
-#        pt_path = found_pts[-1]
-#    elif len(found_safetensors) > 0:
-#        pt_path = found_safetensors[-1]
-#    else: 
-#        pt_model = f'{model_name}-{shared.args.wbits}bit'
-#    
-#      # Try to find the .safetensors or .pt both in the model dir and in the subfolder#
-#
-#        for path in [Path(p + ext) for ext in ['.safetensors', '.pt'] for p in [f"{shared.args.model_dir}/{pt_model}", f"{path_to_model}/{pt_model}"]]:
-#            if path.exists():
-#                pt_path = path
-#                break
-#=======
     # Locate the quantized model file
     path_to_model = Path(f'{shared.args.model_dir}/{model_name}')
     pt_path = None
@@ -195,13 +175,16 @@ def load_quantized(model_name):
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram, load_llama_model_4bit_low_ram_and_offload, load_auto_model_4bit_low_ram_and_offload
       if (model_type== 'llama'):
-         if shared.args.gpu_memory:
-            memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
-            max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
-            max_memory = {}
-            for i in range(len(memory_map)):
-                max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
-            max_memory['cpu'] = max_cpu_memory
+         if shared.args.gpu_memory or torch.cuda.device_count() > 1:
+            if shared.args.gpu_memory:
+                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
+                max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
+                max_memory = {}
+                for i in range(len(memory_map)):
+                    max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
+                max_memory['cpu'] = max_cpu_memory
+            else:
+                max_memory = accelerate.utils.get_balanced_memory(model)
             model, tokenizer = load_llama_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=max_memory, is_v1_model=shared.args.v1)  
          else:
             #from monkeypatch.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
@@ -211,18 +194,21 @@ def load_quantized(model_name):
             
 
       else:
-         if shared.args.gpu_memory:
-            memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
-            max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
-            max_memory = {}
-            for i in range(len(memory_map)):
-                max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
-            max_memory['cpu'] = max_cpu_memory
+         if shared.args.gpu_memory or torch.cuda.device_count() > 1:
+            if shared.args.gpu_memory:
+                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
+                max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
+                max_memory = {}
+                for i in range(len(memory_map)):
+                    max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
+                max_memory['cpu'] = max_cpu_memory
+            else:
+                max_memory = accelerate.utils.get_balanced_memory(model)
             model, tokenizer = load_auto_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=max_memory, is_v1_model=shared.args.v1)                   
          else:
             model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
 
-      print (shared.args.lora, shared.lora_name)
+      print ('Lora arguments:', shared.args.lora, shared.lora_name)
 
       if not shared.args.lora or shared.lora_name == "None":
          finalize_autograd(model)
