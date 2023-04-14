@@ -107,7 +107,7 @@ def load_quantized(model_name):
         load_quant = llama_inference_offload.load_quant
 #    elif shared.args.pre_layer and model_type== 'gptj':
 #        load_quant = load_quant_offload
-    elif model_type in ('llama', 'opt', 'gptneox'):
+    elif model_type in ('llama', 'opt', 'gptneox', 'gptj'):
         if shared.args.pre_layer:
             print("Warning: ignoring --pre_layer because it only works for llama or gptj model type.")
         load_quant = _load_quant
@@ -183,7 +183,7 @@ def load_quantized(model_name):
 #        model = load_quant(_load_quant, str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, gpu_layers=[10,0])
     else:
         threshold = False if model_type == ('gptj') else 128
-        model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
+        model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
 
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory:
