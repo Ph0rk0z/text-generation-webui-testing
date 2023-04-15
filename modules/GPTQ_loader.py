@@ -19,6 +19,20 @@ from gptq_llama import llama_inference_offload
 from modelutils import find_layers
 from quant import make_quant
 
+def calculate_device_mem ():
+    if shared.args.gpu_memory or torch.cuda.device_count() > 1:
+        if shared.args.gpu_memory:
+            memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
+            max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
+            max_memory = {}
+            for i in range(len(memory_map)):
+                max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
+            max_memory['cpu'] = max_cpu_memory
+        else:
+            max_memory = accelerate.utils.get_balanced_memory(model)
+    return max_memory
+
+
 def finalize_autograd (model):
     import autograd_4bit
     from autograd_4bit import Autograd4bitQuantLinear
@@ -30,14 +44,8 @@ def finalize_autograd (model):
           m.bias = m.bias.half()
     autograd_4bit.use_new = True
     autograd_4bit.auto_switch = True
-         #if any((shared.args.xformers, shared.args.sdp_attention)):
-         #   if (model_type== 'llama'):
-         #      from modules import llama_attn_hijack    
-         #      llama_attn_hijack.hijack_llama_attention()
-         #from amp_wrapper import AMPWrapper
-         #wrapper = AMPWrapper(model)
-         #wrapper.apply_generate()
-    print('Apply auto switch and half. Lora:', shared.lora_name)
+
+    print('Apply auto switch and half. Lora:', shared.lora_names)
 
 
 def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head', 'embed_out'], kernel_switch_threshold=128):
@@ -98,6 +106,11 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
 
     model.seqlen = 2048
     print('Done.')
+    
+    #from amp_wrapper import AMPWrapper
+    #wrapper = AMPWrapper(model)
+    #wrapper.apply_generate()
+
 
     return model
 
@@ -175,44 +188,21 @@ def load_quantized(model_name):
       from autograd_4bit import Autograd4bitQuantLinear
       from autograd_4bit import load_llama_model_4bit_low_ram, load_auto_model_4bit_low_ram, load_llama_model_4bit_low_ram_and_offload, load_auto_model_4bit_low_ram_and_offload
       if (model_type== 'llama'):
-         if shared.args.gpu_memory or torch.cuda.device_count() > 1:
-            if shared.args.gpu_memory:
-                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
-                max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
-                max_memory = {}
-                for i in range(len(memory_map)):
-                    max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
-                max_memory['cpu'] = max_cpu_memory
-            else:
-                max_memory = accelerate.utils.get_balanced_memory(model)
-            model, tokenizer = load_llama_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=max_memory, is_v1_model=shared.args.v1)  
+         if shared.args.gpu_memory or torch.cuda.device_count() > 1:         
+            model, tokenizer = load_llama_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=calculate_device_mem(), is_v1_model=shared.args.v1)  
          else:
-            #from monkeypatch.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
-            #replace_llama_attn_with_flash_attn()
-
             model, tokenizer = load_llama_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
-            
-
+          
       else:
          if shared.args.gpu_memory or torch.cuda.device_count() > 1:
-            if shared.args.gpu_memory:
-                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
-                max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
-                max_memory = {}
-                for i in range(len(memory_map)):
-                    max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
-                max_memory['cpu'] = max_cpu_memory
-            else:
-                max_memory = accelerate.utils.get_balanced_memory(model)
-            model, tokenizer = load_auto_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=max_memory, is_v1_model=shared.args.v1)                   
+            model, tokenizer = load_auto_model_4bit_low_ram_and_offload(path_to_model, f"{pt_path}", lora_path=None, groupsize=shared.args.groupsize, seqlen=2048, max_memory=calculate_device_mem(), is_v1_model=shared.args.v1)                   
          else:
             model, tokenizer = load_auto_model_4bit_low_ram(path_to_model, f"{pt_path}", groupsize=shared.args.groupsize, is_v1_model=shared.args.v1)
 
-      print ('Lora arguments:', shared.args.lora, shared.lora_name)
-
-      if not shared.args.lora or shared.lora_name == "None":
+      if not shared.args.lora or len(shared.lora_names) == 0:
          finalize_autograd(model)
-         return model #let textgen handle the tokenizer
+         print('Finalizing In loader')   
+      return model #let textgen handle the tokenizer
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:
@@ -223,17 +213,7 @@ def load_quantized(model_name):
 
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory or torch.cuda.device_count() > 1:
-            if shared.args.gpu_memory:
-                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
-                max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
-                max_memory = {}
-                for i in range(len(memory_map)):
-                    max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
-                max_memory['cpu'] = max_cpu_memory
-            else:
-                max_memory = accelerate.utils.get_balanced_memory(model)
-
-            device_map = accelerate.infer_auto_device_map(model, max_memory=max_memory, no_split_module_classes=["LlamaDecoderLayer", "GPTJBlock", "OPTDecoderLayer", "GPTNeoXLayer"])
+            device_map = accelerate.infer_auto_device_map(model, max_memory=calculate_device_mem(), no_split_module_classes=["LlamaDecoderLayer", "GPTJBlock", "OPTDecoderLayer", "GPTNeoXLayer"])
             print("Using the following device map for the quantized model:", device_map)
             # https://huggingface.co/docs/accelerate/package_reference/big_modeling#accelerate.dispatch_model
             model = accelerate.dispatch_model(model, device_map=device_map, offload_buffers=True)
