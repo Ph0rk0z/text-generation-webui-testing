@@ -450,7 +450,7 @@ def create_settings_menus(default_preset):
 def set_interface_arguments(interface_mode, extensions, bool_active):
     modes = ["default", "notebook", "chat", "cai_chat"]
     cmd_list = vars(shared.args)
-    bool_list = [k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes + list_model_parameters()]
+    bool_list = [k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes]
 
     shared.args.extensions = extensions
     for k in modes[1:]:
