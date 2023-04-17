@@ -88,7 +88,7 @@ python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  
 * Dropdown menu for switching between models
 * Notebook mode that resembles OpenAI's playground
 * Chat mode for conversation and role playing
-* Instruct mode compatible with Alpaca, Vicuna, Open Assistant, Dolly, Koala, and ChatGLM formats **\*NEW!\***
+* Instruct mode compatible with Alpaca, Vicuna, and Open Assistant formats **\*NEW!\***
 * Nice HTML output for GPT-4chan
 * Markdown output for [GALACTICA](https://github.com/paperswithcode/galai), including LaTeX rendering
 * [Custom chat characters](https://github.com/oobabooga/text-generation-webui/wiki/Custom-chat-characters)
@@ -101,8 +101,7 @@ python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  
 * [FlexGen](https://github.com/oobabooga/text-generation-webui/wiki/FlexGen)
 * [DeepSpeed ZeRO-3](https://github.com/oobabooga/text-generation-webui/wiki/DeepSpeed)
 * API [with](https://github.com/oobabooga/text-generation-webui/blob/main/api-example-stream.py) streaming and [without](https://github.com/oobabooga/text-generation-webui/blob/main/api-example.py) streaming
-* [LLaMA model](https://github.com/oobabooga/text-generation-webui/wiki/LLaMA-model)
-* [4-bit GPTQ mode](https://github.com/oobabooga/text-generation-webui/wiki/GPTQ-models-(4-bit-mode))
+* [LLaMA model, including 4-bit GPTQ](https://github.com/oobabooga/text-generation-webui/wiki/LLaMA-model)
 * [llama.cpp](https://github.com/oobabooga/text-generation-webui/wiki/llama.cpp-models) **\*NEW!\***
 * [RWKV model](https://github.com/oobabooga/text-generation-webui/wiki/RWKV-model)
 * [LoRA (loading and training)](https://github.com/oobabooga/text-generation-webui/wiki/Using-LoRAs)
@@ -304,7 +303,6 @@ Optionally, you can use the following command-line flags:
 | `--no-cache`                                | Set `use_cache` to False while generating text. This reduces the VRAM usage a bit with a performance cost. |
 | `--xformers`                                | Use xformer's memory efficient attention. This should increase your tokens/s. |
 | `--sdp-attention`                           | Use torch 2.0's sdp attention. |
-| `--trust-remote-code`                       | Set trust_remote_code=True while loading a model. Necessary for ChatGLM. |
 
 #### llama.cpp
 
@@ -320,15 +318,9 @@ Optionally, you can use the following command-line flags:
 | `--model_type MODEL_TYPE` | GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, and GPT-J are supported. |
 | `--groupsize GROUPSIZE`   | GPTQ: Group size. |
 | `--pre_layer PRE_LAYER`   | GPTQ: The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models. |
-<<<<<<< HEAD
 | `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models |
 | `--v1`   | GPTQ: Explicitly declare a GPTQv1 model to load into autograd. |
-=======
-| `--no-quant_attn`         | GPTQ: Disable quant attention for triton. If you encounter incoherent results try disabling this. |
->>>>>>> b57ffc2ec9bc32ff0cc82ba97edf4986ecf426fb
 | `--no-warmup_autotune`    | GPTQ: Disable warmup autotune for triton. |
-| `--no-fused_mlp`          | GPTQ: Disable fused mlp for triton. If you encounter "Unexpected mma -> mma layout conversion" try disabling this. |
-| `--monkey-patch`          | GPTQ: Apply the monkey patch for using LoRAs with quantized models. |
 
 #### FlexGen
 
