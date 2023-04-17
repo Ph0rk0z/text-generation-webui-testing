@@ -41,6 +41,7 @@ settings = {
     'stop_at_newline': False,
     'add_bos_token': True,
     'ban_eos_token': False,
+    'skip_special_tokens': True,
     'truncation_length': 2048,
     'truncation_length_min': 0,
     'truncation_length_max': 4096,
@@ -112,6 +113,7 @@ parser.add_argument('--bf16', action='store_true', help='Load the model with bfl
 parser.add_argument('--no-cache', action='store_true', help='Set use_cache to False while generating text. This reduces the VRAM usage a bit at a performance cost.')
 parser.add_argument('--xformers', action='store_true', help="Use xformer's memory efficient attention. This should increase your tokens/s.")
 parser.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
+parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM.")
 
 # llama.cpp
 parser.add_argument('--threads', type=int, default=0, help='Number of threads to use in llama.cpp.')
@@ -123,7 +125,9 @@ parser.add_argument('--groupsize', type=int, default=-1, help='GPTQ: Group size.
 parser.add_argument('--pre_layer', type=int, default=0, help='GPTQ: The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models.')
 parser.add_argument('--autograd', action='store_true', default=False, help='Use the autograd GPTQ loader for llama and llama lora')
 parser.add_argument('--v1', action='store_true', default=False, help='Explicity declare GPTQv1 Model to Autograd')
+parser.add_argument('--no-quant_attn', action='store_true', help='GPTQ: Disable quant attention for triton. If you encounter incoherent results try disabling this.')
 parser.add_argument('--no-warmup_autotune', action='store_true', help='GPTQ: Disable warmup autotune for triton.')
+parser.add_argument('--no-fused_mlp', action='store_true', help='GPTQ: Disable fused mlp for triton. If you encounter "Unexpected mma -> mma layout conversion" try disabling this.')
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
@@ -163,6 +167,10 @@ for k in deprecated_dict:
 if args.cai_chat:
     print("Warning: --cai-chat is deprecated. Use --chat instead.")
     args.chat = True
+
+# Security warnings
+if args.trust_remote_code:
+    print("Warning: trust_remote_code is enabled. This is dangerous.")
 
 
 def is_chat():
