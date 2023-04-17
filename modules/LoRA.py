@@ -77,6 +77,7 @@ def add_lora_to_model(lora_names):
             shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
       
         if not shared.args.load_in_8bit and not shared.args.cpu:
+            #if not shared.args.monkey_patch: is this where my multi lora broke?
             shared.model.half()
             if not hasattr(shared.model, "hf_device_map"):
                 if torch.has_mps:
