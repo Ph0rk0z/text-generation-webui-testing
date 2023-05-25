@@ -1,7 +1,7 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 as builder
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y git vim build-essential python3-dev python3-venv && \
+    apt-get install --no-install-recommends -y git vim build-essential python3-dev python3-venv cuda-nvcc-11-8 && \
     rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/oobabooga/GPTQ-for-LLaMa /build
@@ -20,13 +20,17 @@ ARG TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0;8.6+PTX"
 RUN . /build/venv/bin/activate && \
     python3 setup_cuda.py bdist_wheel -d .
 
+COPY repositories/GPTQ-Merged /GPTQ-Merged
+RUN . /build/venv/bin/activate && \
+    pip3 install -U /GPTQ-Merged
+
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 LABEL maintainer="Your Name <your.email@example.com>"
 LABEL description="Docker image for GPTQ-for-LLaMa and Text Generation WebUI"
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y libportaudio2 libasound-dev git python3 python3-pip make g++ && \
+    apt-get install --no-install-recommends -y libportaudio2 build-essential libasound-dev git python3 python3-pip make g++ cuda-nvcc-11-8 python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install virtualenv
@@ -43,8 +47,10 @@ RUN . /app/venv/bin/activate && \
     pip3 install torch torchvision torchaudio
 
 COPY --from=builder /build /app/repositories/GPTQ-for-LLaMa
+COPY --from=builder /GPTQ-Merged /app/repositories/GPTQ-Merged
 RUN . /app/venv/bin/activate && \
-    pip3 install /app/repositories/GPTQ-for-LLaMa/*.whl
+    pip3 install /app/repositories/GPTQ-for-LLaMa/*.whl && \
+    pip3 install -U /app/repositories/GPTQ-Merged
 
 COPY extensions/api/requirements.txt /app/extensions/api/requirements.txt
 COPY extensions/elevenlabs_tts/requirements.txt /app/extensions/elevenlabs_tts/requirements.txt

@@ -10,7 +10,6 @@ pandas
 Pillow>=9.5.0
 pyyaml
 requests
-rwkv==0.4.0
 rwkv==0.7.3
 safetensors==0.3.1
 sentencepiece
