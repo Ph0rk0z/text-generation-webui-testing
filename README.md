@@ -214,7 +214,7 @@ pip install -r requirements.txt
 
 The base installation covers [transformers](https://github.com/huggingface/transformers) models (`AutoModelForCausalLM` and `AutoModelForSeq2SeqLM` specifically) and [llama.cpp](https://github.com/ggerganov/llama.cpp) (GGML) models.
 
-To use 4-bit GPU models, the additional installation steps below are necessary:
+To use GPTQ models, the additional installation steps below are necessary:
 
 [GPTQ models (4 bit mode)](https://github.com/oobabooga/text-generation-webui/blob/main/docs/GPTQ-models-(4-bit-mode).md)
 
@@ -231,9 +231,8 @@ cp docker/.env.example .env
 docker compose up --build
 ```
 
-You need to have docker compose v2.17 or higher installed in your system. To see how to install docker compose itself, see the guide in [here](https://github.com/oobabooga/text-generation-webui/blob/main/docs/Docker.md).
-
-Contributed by [@loeken](https://github.com/loeken) in [#633](https://github.com/oobabooga/text-generation-webui/pull/633)
+* You need to have docker compose v2.17 or higher installed. See [this guide](https://github.com/oobabooga/text-generation-webui/blob/main/docs/Docker.md) for instructions.
+* For additional docker files, check out [this repository](https://github.com/Atinoda/text-generation-webui/blob/docker-wrapper/docs/Docker.md#dedicated-docker-repository).
 
 ### Updating the requirements
 
@@ -336,6 +335,17 @@ Optionally, you can use the following command-line flags:
 | `--sdp-attention`                           | Use torch 2.0's sdp attention. |
 | `--trust-remote-code`                       | Set trust_remote_code=True while loading a model. Necessary for ChatGLM. |
 
+#### Accelerate 4-bit
+
+⚠️ Not supported on Windows at the moment.
+
+| Flag                                        | Description |
+|---------------------------------------------|-------------|
+| `--load-in-4bit`                            | Load the model with 4-bit precision (using bitsandbytes). |
+| `--compute_dtype COMPUTE_DTYPE`             | compute dtype for 4-bit. Valid options: bfloat16, float16, float32. |
+| `--quant_type QUANT_TYPE`                   | quant_type for 4-bit. Valid options: nf4, fp4. |
+| `--use_double_quant`                        | use_double_quant for 4-bit. |
+
 #### llama.cpp
 
 | Flag        | Description |
@@ -398,6 +408,7 @@ Optionally, you can use the following command-line flags:
 | `--listen-port LISTEN_PORT`           | The listening port that the server will use. |
 | `--share`                             | Create a public URL. This is useful for running the web UI on Google Colab or similar. |
 | `--auto-launch`                       | Open the web UI in the default browser upon launch. |
+| `--gradio-auth USER:PWD`              | set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3" |
 | `--gradio-auth-path GRADIO_AUTH_PATH` | Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3" |
 
 #### API
