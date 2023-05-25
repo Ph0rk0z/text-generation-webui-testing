@@ -193,7 +193,7 @@ def huggingface_loader(model_name):
                 params['quantization_config'] = BitsAndBytesConfig(**quantization_config_params)
 
             elif shared.args.load_in_8bit and any((shared.args.auto_devices, shared.args.gpu_memory)):
-                params['quantization_config'] = BitsAndBytesConfig(load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True, , llm_int8_threshold=float(shared.args.threshold))
+                params['quantization_config'] = BitsAndBytesConfig(load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True, llm_int8_threshold=float(shared.args.threshold))
             elif shared.args.load_in_8bit:
                 params['quantization_config'] = BitsAndBytesConfig(load_in_8bit=True, llm_int8_threshold=float(shared.args.threshold))
             elif shared.args.bf16:

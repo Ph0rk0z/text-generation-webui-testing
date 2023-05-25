@@ -113,12 +113,8 @@ parser.add_argument('--gpu-memory', type=str, nargs="+", help='Maxmimum GPU memo
 parser.add_argument('--cpu-memory', type=str, help='Maximum CPU memory in GiB to allocate for offloaded weights. Same as above.')
 parser.add_argument('--disk', action='store_true', help='If the model is too large for your GPU(s) and CPU combined, send the remaining layers to the disk.')
 parser.add_argument('--disk-cache-dir', type=str, default="cache", help='Directory to save the disk cache to. Defaults to "cache".')
-<<<<<<< HEAD
 parser.add_argument('--load-in-8bit', action='store_true', help='Load the model with 8-bit precision.')
 parser.add_argument('--threshold', type=float, default=1.5, help='8 bit threshold for older cards')
-=======
-parser.add_argument('--load-in-8bit', action='store_true', help='Load the model with 8-bit precision (using bitsandbytes).')
->>>>>>> a04266161db6994838f014559e65e3e5c394bec9
 parser.add_argument('--bf16', action='store_true', help='Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.')
 parser.add_argument('--no-cache', action='store_true', help='Set use_cache to False while generating text. This reduces the VRAM usage a bit at a performance cost.')
 parser.add_argument('--xformers', action='store_true', help="Use xformer's memory efficient attention. This should increase your tokens/s.")
@@ -152,9 +148,9 @@ parser.add_argument('--quant_attn', action='store_true', help='(triton/ cuda-aut
 parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Enable warmup autotune.')
 parser.add_argument('--fused_mlp', action='store_true', help='(triton) Enable fused mlp.')
 parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
-parser.add_argument('--autogptq-triton', action='store_true', help='Enable Triton for AutoGPTQ.')
-parser.add_argument('--autogptq-device-map', type=str, default='', help='Device map for AutoGPTQ.')
-parser.add_argument('--autogptq-act-order', action='store_true', help='Act-order or desc_act for AutoGPTQ.')
+parser.add_argument('--autogptq_triton', action='store_true', help='Enable Triton for AutoGPTQ.')
+parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
+parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 #parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
 #parser.add_argument('--autogptq-compat', action='store_true', help='Use compatibility mode for AutoGPTQ.')
 

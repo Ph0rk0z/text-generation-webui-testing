@@ -126,6 +126,7 @@ def load_quantized(model_name):
     try:
         model = AutoGPTQForCausalLM.from_quantized(path_to_model,
                                                    device=dev,
+                                                   #low_cpu_mem_usage=True,
                                                    use_triton=shared.args.autogptq_triton,
                                                    use_safetensors=safetensors,
                                                    quantize_config=quantize_config,
@@ -136,11 +137,10 @@ def load_quantized(model_name):
                                                    inject_fused_attention=shared.args.quant_attn,
                                                    inject_fused_mlp=shared.args.fused_mlp,
                                                    use_cuda_fp16=False,
-                                                   strict=False,
                                                    warmup_triton=shared.args.warmup_autotune)
     except ValueError:
-        logger.error('Could not load model. The model might be using old quantization. Use the --autogptq-compat flag.')
-        raise Exception('Could not load model. The model might be using old quantization. Use the --autogptq-compat flag.')
+        logger.error('Could not load model.')
+        raise Exception('Could not load model. ')
 
 
     return model
