@@ -6,6 +6,7 @@ import yaml
 
 from modules.logging_colors import logger
 
+generation_lock = None
 model = None
 tokenizer = None
 model_name = "None"
@@ -112,13 +113,23 @@ parser.add_argument('--gpu-memory', type=str, nargs="+", help='Maxmimum GPU memo
 parser.add_argument('--cpu-memory', type=str, help='Maximum CPU memory in GiB to allocate for offloaded weights. Same as above.')
 parser.add_argument('--disk', action='store_true', help='If the model is too large for your GPU(s) and CPU combined, send the remaining layers to the disk.')
 parser.add_argument('--disk-cache-dir', type=str, default="cache", help='Directory to save the disk cache to. Defaults to "cache".')
+<<<<<<< HEAD
 parser.add_argument('--load-in-8bit', action='store_true', help='Load the model with 8-bit precision.')
 parser.add_argument('--threshold', type=float, default=1.5, help='8 bit threshold for older cards')
+=======
+parser.add_argument('--load-in-8bit', action='store_true', help='Load the model with 8-bit precision (using bitsandbytes).')
+>>>>>>> a04266161db6994838f014559e65e3e5c394bec9
 parser.add_argument('--bf16', action='store_true', help='Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.')
 parser.add_argument('--no-cache', action='store_true', help='Set use_cache to False while generating text. This reduces the VRAM usage a bit at a performance cost.')
 parser.add_argument('--xformers', action='store_true', help="Use xformer's memory efficient attention. This should increase your tokens/s.")
 parser.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
 parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM.")
+
+# Accelerate 4-bit
+parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
+parser.add_argument('--compute_dtype', type=str, default="bfloat16", help="compute dtype for 4-bit. Valid options: bfloat16, float16, float32.")
+parser.add_argument('--quant_type', type=str, default="nf4", help='quant_type for 4-bit. Valid options: nf4, fp4.')
+parser.add_argument('--use_double_quant', action='store_true', help='use_double_quant for 4-bit.')
 
 # llama.cpp
 parser.add_argument('--threads', type=int, default=0, help='Number of threads to use.')
@@ -137,7 +148,7 @@ parser.add_argument('--checkpoint', type=str, help='The path to the quantized ch
 parser.add_argument('--autograd', action='store_true', default=False, help='Use the autograd GPTQ loader for llama and llama lora')
 parser.add_argument('--v1', action='store_true', default=False, help='Explicity declare GPTQv1 Model to Autograd')
 parser.add_argument('--mlp_attn', action='store_true', help='MLP attention hijack. Slightly faster inference.')
-parser.add_argument('--quant_attn', action='store_true', help='(triton) Enable quant attention.')
+parser.add_argument('--quant_attn', action='store_true', help='(triton/ cuda-autogptq) Enable quant attention.')
 parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Enable warmup autotune.')
 parser.add_argument('--fused_mlp', action='store_true', help='(triton) Enable fused mlp.')
 parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
@@ -169,6 +180,7 @@ parser.add_argument('--listen-port', type=int, help='The listening port that the
 parser.add_argument('--share', action='store_true', help='Create a public URL. This is useful for running the web UI on Google Colab or similar.')
 parser.add_argument('--auto-launch', action='store_true', default=False, help='Open the web UI in the default browser upon launch.')
 parser.add_argument('--verbose', action='store_true', help='Print the prompts to the terminal.')
+parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--gradio-auth-path", type=str, help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"', default=None)
 
 # API
