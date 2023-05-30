@@ -404,9 +404,14 @@ def create_model_menus():
 
                     with gr.Column():
                         shared.gradio['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0)
-                        gr.Markdown('AutoGPTQ')
-                        shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source. When enabled, gpu-memory should be used for CPU offloading instead of pre_layer.')
+                        #gr.Markdown('AutoGPTQ')
+                        shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source.')
                         shared.gradio['autogptq_triton'] = gr.Checkbox(label="triton", value=shared.args.autogptq_triton, info='Use triton in AutoGPTQ')
+                    with gr.Column():
+
+                        shared.gradio['mlp_attn'] = gr.Checkbox(label="mlp_attn", value=shared.args.mlp_attn, info='AutoGPTQ mlp_attn. (triton)')
+                        shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Use quant_attn in AutoGPTQ (cuda/triton)')
+                        shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Use models with act order + group size together')
 
             with gr.Box():
                 gr.Markdown('llama.cpp')
