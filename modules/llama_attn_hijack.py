@@ -9,11 +9,11 @@ import transformers.models.llama.modeling_llama
 import modules.shared as shared
 from modules.logging_colors import logger
 
-if shared.args.xformers:
-    try:
-        import xformers.ops
-    except Exception:
-        logger.error("xformers not found! Please install it before trying to use it.", file=sys.stderr)
+#if shared.args.xformers:
+#    try:
+#        import xformers.ops
+#    except Exception:
+#        logger.error("xformers not found! Please install it before trying to use it.", file=sys.stderr)
 
 
 def hijack_llama_attention():
@@ -30,6 +30,7 @@ def hijack_llama_attention():
 
 def xformers_forward(
     self,
+
     hidden_states: torch.Tensor,
     attention_mask: Optional[torch.Tensor] = None,
     position_ids: Optional[torch.LongTensor] = None,
@@ -38,6 +39,12 @@ def xformers_forward(
     use_cache: bool = False,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
     bsz, q_len, _ = hidden_states.size()
+
+    try:
+        import xformers.ops
+    except Exception:
+        logger.error("xformers not found! Please install it before trying to use it.", file=sys.stderr)
+
 
     query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
     key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
