@@ -24,6 +24,13 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+5/30/23
+```
+Dirty lora support for AutoGPTQ. You need my fork or merged PR,
+also get PEFT current pip install git+https://github.com/huggingface/peft
+No training yet.
+```
+
 5/17/23
 ```
 Update submodules, supporting a new method of splitting that makes 65b possible over 2, 

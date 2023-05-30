@@ -52,7 +52,7 @@ def add_lora_to_model(lora_names):
         peft_config = GPTQLoraConfig(
             inference_mode=True,
         )
-        logger.info('AutoGPTQ Lora Added:', lora_path, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
+        print('AutoGPTQ Lora Added:', Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
         #logger.info("#####", peft_config)
         model = get_gptq_peft_model(shared.model, peft_config, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
         return
