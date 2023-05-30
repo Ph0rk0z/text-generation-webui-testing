@@ -32,17 +32,30 @@ def add_lora_to_model(lora_names):
     removed_set = prior_set - set(lora_names)
     shared.lora_names = list(lora_names)
     
-    if len(removed_set) > 0 and shared.args.autograd:
+    if len(removed_set) > 0 and (shared.args.autograd or shared.args.autogptq):
        from modules.models import reload_model
        reload_model() #remove lora
        return
     if shared.args.autograd and len(lora_names) > 0:
        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
        autograd_add(lora_path)
-       print ('Lora Added:', lora_path, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
+       logger.info('Autograd Lora Added:', lora_path, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
        return
 
     from peft import PeftModel
+
+    # AutoGPTQ lora for inference
+    if shared.args.autogptq and len(lora_names) > 0:
+        from auto_gptq import AutoGPTQForCausalLM, get_gptq_peft_model
+        from auto_gptq.utils.peft_utils import GPTQLoraConfig
+        
+        peft_config = GPTQLoraConfig(
+            inference_mode=True,
+        )
+        logger.info('AutoGPTQ Lora Added:', lora_path, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
+        #logger.info("#####", peft_config)
+        model = get_gptq_peft_model(shared.model, peft_config, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
+        return
 
     # If no LoRA needs to be added or removed, exit
     if len(added_set) == 0 and len(removed_set) == 0:
