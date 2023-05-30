@@ -1,0 +1,8 @@
+do_sample: True
+top_p: 0.73
+top_k: 0
+temperature: 1.19
+repetition_penalty: 1.13
+typical_p: 1.0
+encoder_repetition_penalty: 0.86
+no_repeat_ngram_size: 0
