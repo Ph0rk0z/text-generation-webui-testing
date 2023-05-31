@@ -124,11 +124,15 @@ def finalize_autograd (model):
           m.scales = m.scales.half()
           m.bias = m.bias.half()
 
-    if (shared.args.mlp_attn):
-       from model_attn_mlp_patch import make_quant_attn, make_fused_mlp
-       make_quant_attn(model, is_v1_model=shared.args.v1)
-       make_fused_mlp(model, is_v1_model=shared.args.v1)
-       print(Style.BRIGHT + Fore.YELLOW + 'Todo: No loras with MLP yet')
+    if (shared.args.fused_mlp) or (shared.args.quant_attn):
+       if (shared.args.quant_attn): 
+           from model_attn_mlp_patch import make_quant_attn
+           make_quant_attn(model, is_v1_model=shared.args.v1)
+           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: quant_attn')
+       if (shared.args.fused_mlp):
+           from model_attn_mlp_patch import make_fused_mlp
+           make_fused_mlp(model, is_v1_model=shared.args.v1)
+           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: fused_mlp\nTodo: No loras with MLP yet')
     else:
        from amp_wrapper import AMPWrapper
        wrapper = AMPWrapper(model)
