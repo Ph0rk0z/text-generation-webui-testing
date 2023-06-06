@@ -149,6 +149,9 @@ parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Dev
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 #parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
 
+# exllama
+parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
+
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
 parser.add_argument('--percent', type=int, nargs="+", default=[0, 100, 100, 0, 100, 0], help='FlexGen: allocation percentages. Must be 6 numbers separated by spaces (default: 0, 100, 100, 0, 100, 0).')
