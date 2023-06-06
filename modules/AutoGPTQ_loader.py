@@ -1,5 +1,6 @@
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 from pathlib import Path
+
 import torch
 import re
 import json
@@ -141,6 +142,5 @@ def load_quantized(model_name):
     except ValueError:
         logger.error('Could not load model.')
         raise Exception('Could not load model. ')
-
 
     return model

@@ -55,6 +55,7 @@ settings = {
     'truncation_length_min': 0,
     'truncation_length_max': 8192,
     'mode': 'chat',
+    'start_with': '',
     'chat_style': 'cai-chat',
     'instruction_template': 'None',
     'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
@@ -100,7 +101,7 @@ parser.add_argument('--extensions', type=str, nargs="+", help='The list of exten
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
 parser.add_argument('--auto-devices', action='store_true', help='Automatically split the model across the available GPU(s) and CPU.')
-parser.add_argument('--gpu-memory', type=str, nargs="+", help='Maxmimum GPU memory in GiB to be allocated per GPU. Example: --gpu-memory 10 for a single GPU, --gpu-memory 10 5 for two GPUs. You can also set values in MiB like --gpu-memory 3500MiB.')
+parser.add_argument('--gpu-memory', type=str, nargs="+", help='Maximum GPU memory in GiB to be allocated per GPU. Example: --gpu-memory 10 for a single GPU, --gpu-memory 10 5 for two GPUs. You can also set values in MiB like --gpu-memory 3500MiB.')
 parser.add_argument('--cpu-memory', type=str, help='Maximum CPU memory in GiB to allocate for offloaded weights. Same as above.')
 parser.add_argument('--disk', action='store_true', help='If the model is too large for your GPU(s) and CPU combined, send the remaining layers to the disk.')
 parser.add_argument('--disk-cache-dir', type=str, default="cache", help='Directory to save the disk cache to. Defaults to "cache".')
@@ -141,12 +142,13 @@ parser.add_argument('--mlp_attn', action='store_true', help='MLP attention hijac
 parser.add_argument('--quant_attn', action='store_true', help='(triton/ cuda-autogptq) Enable quant attention.')
 parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Enable warmup autotune.')
 parser.add_argument('--fused_mlp', action='store_true', help='(triton) Enable fused mlp.')
+
+# AutoGPTQ
 parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
 parser.add_argument('--autogptq_triton', action='store_true', help='Enable Triton for AutoGPTQ.')
 parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 #parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
-#parser.add_argument('--autogptq-compat', action='store_true', help='Use compatibility mode for AutoGPTQ.')
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
@@ -184,13 +186,6 @@ parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The m
 
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
-
-# Deprecation warnings for parameters that have been renamed
-deprecated_dict = {}
-for k in deprecated_dict:
-    if getattr(args, k) != deprecated_dict[k][1]:
-        logger.warning(f"--{k} is deprecated and will be removed. Use --{deprecated_dict[k][0]} instead.")
-        setattr(args, deprecated_dict[k][0], getattr(args, k))
 
 # Security warnings
 if args.trust_remote_code:
