@@ -407,9 +407,9 @@ def create_model_menus():
                     with gr.Column():
                         shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source.')
                         shared.gradio['autogptq_triton'] = gr.Checkbox(label="triton", value=shared.args.autogptq_triton, info='Use triton in AutoGPTQ')
-
-                        shared.gradio['mlp_attn'] = gr.Checkbox(label="mlp_attn", value=shared.args.mlp_attn, info='AutoGPTQ mlp_attn. (triton)')
-                        shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Use quant_attn in AutoGPTQ (cuda/triton)')
+                    with gr.Column():
+                        shared.gradio['fused_mlp'] = gr.Checkbox(label="fused_mlp", value=shared.args.fused_mlp, info='AutoGPTQ (triton) or Autograd')
+                        shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Quant_Attn in AutoGPTQ/Autograd (cuda/triton)')
                         shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Use models with act order + group size together')
                     with gr.Column():
                         shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
