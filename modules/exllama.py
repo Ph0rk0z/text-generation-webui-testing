@@ -38,6 +38,19 @@ class ExllamaModel:
         config = ExLlamaConfig(str(model_config_path))
         config.model_path = str(model_path)
         config.max_seq_len = 2048
+
+        # Tuning
+        config.matmul_recons_thd = 8
+        config.fused_mlp_thd = 2
+        config.sdp_thd = 8
+        config.matmul_fused_remap = False
+
+        if (shared.args.nohalf2):
+            config.rmsnorm_no_half2 = True
+            config.rope_no_half2 = True
+            config.matmul_no_half2 = True
+            config.silu_no_half2 = True
+
         if (shared.args.gpu_split):
             config.set_auto_map(shared.args.gpu_split)
             config.gpu_peer_fix = True

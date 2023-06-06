@@ -152,6 +152,8 @@ parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order
 # exllama
 parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
 parser.add_argument('--gpu-split', type = str, help = "Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. -gs 20,7,7")
+parser.add_argument('--nohalf2', action='store_true', help='Disable use of half2. Maybe help pascal')
+
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
