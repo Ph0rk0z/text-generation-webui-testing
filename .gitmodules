@@ -13,3 +13,6 @@
 	path = extensions/bark_tts
 	url = https://github.com/wsippel/bark_tts
 	ignore = untracked
+[submodule "repositories/exllama"]
+	path = repositories/exllama
+	url = https://github.com/turboderp/exllama

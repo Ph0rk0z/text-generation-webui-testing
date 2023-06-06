@@ -402,6 +402,7 @@ def create_model_menus():
                         shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention. Compute 7.0 and up.')
 
                     with gr.Column():
+                        shared.gradio['exllama'] = gr.Checkbox(label="exLlama", value=shared.args.exllama, info='Load with exLlama. Weak sampling but high performance')
                         shared.gradio['no_cache'] = gr.Checkbox(label="no_cache", value=shared.args.no_cache, info='Disable generation cache for less memory but slower speed.')
 
 
