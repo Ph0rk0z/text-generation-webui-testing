@@ -405,12 +405,12 @@ def create_model_menus():
                         shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", "gptneox"], value=shared.args.model_type or "None")
                         shared.gradio['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0)
                     with gr.Column():
+                        gr.Markdown('AutoGPTQ')
                         shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source.')
                         shared.gradio['autogptq_triton'] = gr.Checkbox(label="triton", value=shared.args.autogptq_triton, info='Use triton in AutoGPTQ')
-                    with gr.Column():
                         shared.gradio['fused_mlp'] = gr.Checkbox(label="fused_mlp", value=shared.args.fused_mlp, info='AutoGPTQ (triton) or Autograd')
                         shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Quant_Attn in AutoGPTQ/Autograd (cuda/triton)')
-                        shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Use models with act order + group size together')
+                        shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='(AutoGPTQ)Use models with act order + group size together')
                     with gr.Column():
                         shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
                         shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Torch 2.0 SDP attention')
