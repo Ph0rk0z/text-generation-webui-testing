@@ -83,6 +83,8 @@ def load_model(model_name):
 
     if shared.args.wbits > 0:
         load_func = GPTQ_loader
+    elif Path(f'{shared.args.model_dir}/{model_name}/quantize_config.json').exists() or shared.args.wbits > 0:
+        load_func = AutoGPTQ_loader
     elif shared.model_type == 'llamacpp':
         load_func = llamacpp_loader
     elif shared.model_type == 'rwkv':

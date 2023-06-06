@@ -89,6 +89,8 @@ def load_preset_values(preset_menu, state, return_dict=False):
         'typical_p': 1,
         'epsilon_cutoff': 0,
         'eta_cutoff': 0,
+        'tfs': 1,
+        'top_a': 0,
         'repetition_penalty': 1,
         'encoder_repetition_penalty': 1,
         'top_k': 0,
@@ -101,8 +103,6 @@ def load_preset_values(preset_menu, state, return_dict=False):
         'mirostat_mode': 0,
         'mirostat_tau': 5.0,
         'mirostat_eta': 0.1,
-        'tfs': 1,
-        'top_a': 0,
     }
 
     with open(Path(f'presets/{preset_menu}.yaml'), 'r') as infile:
@@ -184,7 +184,8 @@ def count_tokens(text):
 
 def download_model_wrapper(repo_id):
     try:
-        downloader = importlib.import_module("download-model")
+        downloader_module = importlib.import_module("download-model")
+        downloader = downloader_module.ModelDownloader()
         repo_id_parts = repo_id.split(":")
         model = repo_id_parts[0] if len(repo_id_parts) > 0 else repo_id
         branch = repo_id_parts[1] if len(repo_id_parts) > 1 else "main"
@@ -371,7 +372,7 @@ def create_model_menus():
                         shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
                         shared.gradio['threshold'] = gr.Slider(label="8bit threshold", minimum=0.0, maximum=10.0, value=shared.args.threshold)
                         shared.gradio['trust_remote_code'] = gr.Checkbox(label="trust-remote-code", value=shared.args.trust_remote_code, info='Make sure to inspect the .py files inside the model folder before loading it with this option enabled.')
-                        
+
             with gr.Box():
                 gr.Markdown('Transformers 4-bit')
                 with gr.Row():
@@ -391,7 +392,6 @@ def create_model_menus():
 
         with gr.Column():
             with gr.Box():
-                gr.Markdown('GPTQ')
                 with gr.Row():
                     with gr.Column():
                         shared.gradio['wbits'] = gr.Dropdown(label="wbits", choices=["None", 1, 2, 3, 4, 8], value=shared.args.wbits if shared.args.wbits > 0 else "None")
@@ -403,6 +403,13 @@ def create_model_menus():
                         shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", "gptneox"], value=shared.args.model_type or "None")
 
                     with gr.Column():
+                        gr.Markdown('GPTQ-for-LLaMa')
+                        shared.gradio['gptq_for_llama'] = gr.Checkbox(label="gptq-for-llama", value=shared.args.gptq_for_llama, info='Use GPTQ-for-LLaMa to load the GPTQ model instead of AutoGPTQ. pre_layer should be used for CPU offloading instead of gpu-memory.')
+                        with gr.Row():
+                            shared.gradio['wbits'] = gr.Dropdown(label="wbits", choices=["None", 1, 2, 3, 4, 8], value=shared.args.wbits if shared.args.wbits > 0 else "None")
+                            shared.gradio['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128, 1024], value=shared.args.groupsize if shared.args.groupsize > 0 else "None")
+
+                        shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj"], value=shared.args.model_type or "None")
                         shared.gradio['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0)
                         #gr.Markdown('AutoGPTQ')
                         shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source.')
@@ -639,8 +646,12 @@ def create_interface():
                     shared.gradio['Clear history-confirm'] = gr.Button('Confirm', variant='stop', visible=False)
                     shared.gradio['Clear history-cancel'] = gr.Button('Cancel', visible=False)
 
-                shared.gradio['mode'] = gr.Radio(choices=['chat', 'chat-instruct', 'instruct'], value=shared.settings['mode'] if shared.settings['mode'] in ['chat', 'instruct', 'chat-instruct'] else 'chat', label='Mode', info='Defines how the chat prompt is generated. In instruct and chat-instruct modes, the instruction template selected under "Chat settings" must match the current model.')
-                shared.gradio['chat_style'] = gr.Dropdown(choices=utils.get_available_chat_styles(), label='Chat style', value=shared.settings['chat_style'], visible=shared.settings['mode'] != 'instruct')
+                with gr.Row():
+                    shared.gradio['start_with'] = gr.Textbox(label='Start reply with', placeholder='Sure thing!', value=shared.settings['start_with'])
+
+                with gr.Row():
+                    shared.gradio['mode'] = gr.Radio(choices=['chat', 'chat-instruct', 'instruct'], value=shared.settings['mode'] if shared.settings['mode'] in ['chat', 'instruct', 'chat-instruct'] else 'chat', label='Mode', info='Defines how the chat prompt is generated. In instruct and chat-instruct modes, the instruction template selected under "Chat settings" must match the current model.')
+                    shared.gradio['chat_style'] = gr.Dropdown(choices=utils.get_available_chat_styles(), label='Chat style', value=shared.settings['chat_style'], visible=shared.settings['mode'] != 'instruct')
 
             with gr.Tab('Chat settings', elem_id='chat-settings'):
                 with gr.Row():
@@ -710,7 +721,7 @@ def create_interface():
                     with gr.Row():
                         with gr.Column():
                             shared.gradio['max_new_tokens'] = gr.Slider(minimum=shared.settings['max_new_tokens_min'], maximum=shared.settings['max_new_tokens_max'], step=1, label='max_new_tokens', value=shared.settings['max_new_tokens'])
-                            shared.gradio['chat_prompt_size'] = gr.Slider(minimum=shared.settings['chat_prompt_size_min'], maximum=shared.settings['chat_prompt_size_max'], step=1, label='Maximum prompt size in tokens', value=shared.settings['chat_prompt_size'])
+                            shared.gradio['chat_prompt_size'] = gr.Slider(minimum=shared.settings['chat_prompt_size_min'], maximum=shared.settings['chat_prompt_size_max'], step=1, label='chat_prompt_size', info='Set limit on prompt size by removing old messages (while retaining context and user input)', value=shared.settings['chat_prompt_size'])
 
                         with gr.Column():
                             shared.gradio['chat_generation_attempts'] = gr.Slider(minimum=shared.settings['chat_generation_attempts_min'], maximum=shared.settings['chat_generation_attempts_max'], value=shared.settings['chat_generation_attempts'], step=1, label='Generation attempts (for longer replies)', info='New generations will be called until either this number is reached or no new content is generated between two iterations.')
@@ -838,7 +849,7 @@ def create_interface():
 
         # chat mode event handlers
         if shared.is_chat():
-            shared.input_params = [shared.gradio[k] for k in ['Chat input', 'interface_state']]
+            shared.input_params = [shared.gradio[k] for k in ['Chat input', 'start_with', 'interface_state']]
             clear_arr = [shared.gradio[k] for k in ['Clear history-confirm', 'Clear history', 'Clear history-cancel']]
             shared.reload_inputs = [shared.gradio[k] for k in ['name1', 'name2', 'mode', 'chat_style']]
 
@@ -1058,6 +1069,7 @@ if __name__ == "__main__":
         'mode': shared.settings['mode'],
         'skip_special_tokens': shared.settings['skip_special_tokens'],
         'custom_stopping_strings': shared.settings['custom_stopping_strings'],
+        'truncation_length': shared.settings['truncation_length'],
     }
 
     shared.model_config.move_to_end('.*', last=False)  # Move to the beginning
