@@ -78,10 +78,10 @@ def load_model(model_name):
         logger.error('The path to the model does not exist. Exiting.')
         return None, None
 
-    if shared.args.wbits > 0:
+    if shared.args.exllama:
+        load_func = exllama_loader
+    elif shared.args.wbits > 0:
         load_func = GPTQ_loader
-    elif Path(f'{shared.args.model_dir}/{model_name}/quantize_config.json').exists() or shared.args.wbits > 0:
-        load_func = AutoGPTQ_loader
     elif shared.model_type == 'llamacpp':
         load_func = llamacpp_loader
     elif shared.model_type == 'rwkv':
@@ -274,19 +274,23 @@ def llamacpp_loader(model_name):
 
 
 def GPTQ_loader(model_name):
-
     #AutoGPTQ
     if shared.args.autogptq:
         from modules.AutoGPTQ_loader import load_quantized
-
         model = load_quantized(model_name)
     #Autograd and GPTQ
     else:
         from modules.GPTQ_loader import load_quantized
-
         model = load_quantized(model_name)
 
     return model
+
+
+def exllama_loader(model_name):
+    from modules.exllama import ExllamaModel
+
+    model, tokenizer = ExllamaModel.from_pretrained(model_name)
+    return model, tokenizer
 
 
 def get_max_memory_dict():
