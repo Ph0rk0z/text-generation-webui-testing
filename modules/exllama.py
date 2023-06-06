@@ -10,6 +10,7 @@ from repositories.exllama.tokenizer import ExLlamaTokenizer
 
 from modules.logging_colors import logger
 
+import modules.shared as shared
 
 class ExllamaModel:
     def __init__(self):
@@ -37,6 +38,9 @@ class ExllamaModel:
         config = ExLlamaConfig(str(model_config_path))
         config.model_path = str(model_path)
         config.max_seq_len = 2048
+        if (shared.args.gpu_split):
+            config.set_auto_map(shared.args.gpu_split)
+            config.gpu_peer_fix = True
         model = ExLlama(config)
         cache = ExLlamaCache(model)
         tokenizer = ExLlamaTokenizer(str(tokenizer_model_path))
