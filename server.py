@@ -394,36 +394,30 @@ def create_model_menus():
             with gr.Box():
                 with gr.Row():
                     with gr.Column():
-                        shared.gradio['wbits'] = gr.Dropdown(label="wbits", choices=["None", 1, 2, 3, 4, 8], value=shared.args.wbits if shared.args.wbits > 0 else "None")
-                        shared.gradio['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128, 1024], value=shared.args.groupsize if shared.args.groupsize > 0 else "None")
-
-                    with gr.Column():
                         shared.gradio['autograd'] = gr.Checkbox(label="Autograd", value=shared.args.autograd)
                         shared.gradio['v1'] = gr.Checkbox(label="GPTQv1 Model (Autograd Only)", value=shared.args.v1)
-                        shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", "gptneox"], value=shared.args.model_type or "None")
 
-                    with gr.Column():
-                        gr.Markdown('GPTQ-for-LLaMa')
-                        shared.gradio['gptq_for_llama'] = gr.Checkbox(label="gptq-for-llama", value=shared.args.gptq_for_llama, info='Use GPTQ-for-LLaMa to load the GPTQ model instead of AutoGPTQ. pre_layer should be used for CPU offloading instead of gpu-memory.')
+                    #with gr.Column():
                         with gr.Row():
                             shared.gradio['wbits'] = gr.Dropdown(label="wbits", choices=["None", 1, 2, 3, 4, 8], value=shared.args.wbits if shared.args.wbits > 0 else "None")
                             shared.gradio['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128, 1024], value=shared.args.groupsize if shared.args.groupsize > 0 else "None")
 
-                        shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj"], value=shared.args.model_type or "None")
+                        shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", "gptneox"], value=shared.args.model_type or "None")
                         shared.gradio['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0)
-                        #gr.Markdown('AutoGPTQ')
+                    with gr.Column():
                         shared.gradio['autogptq'] = gr.Checkbox(label="autogptq", value=shared.args.autogptq, info='AutoGPTQ needs to be manually installed from source.')
                         shared.gradio['autogptq_triton'] = gr.Checkbox(label="triton", value=shared.args.autogptq_triton, info='Use triton in AutoGPTQ')
-                    with gr.Column():
+
                         shared.gradio['mlp_attn'] = gr.Checkbox(label="mlp_attn", value=shared.args.mlp_attn, info='AutoGPTQ mlp_attn. (triton)')
                         shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Use quant_attn in AutoGPTQ (cuda/triton)')
                         shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Use models with act order + group size together')
                     with gr.Column():
-                        shared.gradio['no_cache'] = gr.Checkbox(label="no_cache", value=shared.args.no_cache, info='Disable generation cache for less memory but slower speed.')
                         shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
-                    with gr.Column():
                         shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Torch 2.0 SDP attention')
                         shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention. Compute 7.0 and up.')
+
+                    with gr.Column():
+                        shared.gradio['no_cache'] = gr.Checkbox(label="no_cache", value=shared.args.no_cache, info='Disable generation cache for less memory but slower speed.')
 
 
             with gr.Box():
