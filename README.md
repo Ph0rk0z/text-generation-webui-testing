@@ -12,7 +12,7 @@
 - Offloading works in autograd with --gpu-memory but doesn't 100% hodl while generating
 - Offloading for llama GPTQ works
 - Offloading for all other GPTQ models getting worked on
-- Probably not as fast as the old version (still figuring this out)
+- Autograd + quant_attn beating Autogtpq on P6000!
 - 4bit loras only work in autograd
 - Only load one 4bit lora at a time and apply with no loras before switch.
 - Train 4-bit loras 
@@ -23,6 +23,11 @@
 https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
+
+6/8/23
+```
+exllama support merged
+```
 
 5/30/23
 ```
