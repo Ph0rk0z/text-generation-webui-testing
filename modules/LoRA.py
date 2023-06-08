@@ -32,10 +32,12 @@ def add_lora_to_model(lora_names):
     removed_set = prior_set - set(lora_names)
     shared.lora_names = list(lora_names)
     
+    # Autograd/Autogptq Remove lora
     if len(removed_set) > 0 and (shared.args.autograd or shared.args.autogptq):
        from modules.models import reload_model
        reload_model() #remove lora
        return
+    # Add Autograd Lora
     if shared.args.autograd and len(lora_names) > 0:
        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
        autograd_add(lora_path)
@@ -71,11 +73,7 @@ def add_lora_to_model(lora_names):
 
     # If any LoRA needs to be removed, start over
     if len(removed_set) > 0:
-        shared.model.disable_adapter()
-    #    if shared.args.autograd:
-    #       from modules.models import reload_model
-    #       reload_model() #remove lora
-    
+        shared.model.disable_adapter()  
         shared.model = shared.model.base_model.model
 
 
@@ -89,22 +87,13 @@ def add_lora_to_model(lora_names):
             elif shared.args.load_in_8bit:
                 params['device_map'] = {'': 0}
 
-#        if shared.args.autograd:
- #          lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
- #          autograd_add(lora_path)
- #          print ('Lora Added:', lora_path, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
- #       else:
+
         shared.model = PeftModel.from_pretrained(shared.model, Path(f"{shared.args.lora_dir}/{lora_names[0]}"), **params)
 
         for lora in lora_names[1:]:
             shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
       
         if not shared.args.load_in_8bit and not shared.args.cpu:
-            #if shared.args.autograd: 
-            #   from modules.GPTQ_loader import finalize_autograd
-            #   finalize_autograd(shared.model)
-            #   print('Finalize Lora')
-            #else:
             shared.model.half()
             if not hasattr(shared.model, "hf_device_map"):
                 if torch.has_mps:
