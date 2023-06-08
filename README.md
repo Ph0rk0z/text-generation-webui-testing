@@ -17,6 +17,7 @@
 - Train 4-bit loras with Autograd and hopefully soon AutoGPTQ
 - AutoGPTQ (https://github.com/PanQiWei/AutoGPTQ) < Finally Merged
 - exLlama support (compute 7 and up for benefits)
+- more parameters from UI for remote hosts
 
 
 #### Depends on:
