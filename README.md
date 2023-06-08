@@ -10,13 +10,13 @@
 - V1 Models work in --autograd (declare with --v1)
 - V2 Models work in both.
 - Offloading works in autograd with --gpu-memory but doesn't 100% hodl while generating
-- Offloading for llama GPTQ works
-- Offloading for all other GPTQ models getting worked on
+- Offloading with llama_inference_offload, fastest multi-gpu besides exllama
 - Autograd + quant_attn beating Autogtpq on P6000!
-- 4bit loras only work in autograd
+- 4bit loras only work in Autograd + AutoGPTQ
 - Only load one 4bit lora at a time and apply with no loras before switch.
-- Train 4-bit loras 
+- Train 4-bit loras with Autograd and hopefully soon AutoGPTQ
 - AutoGPTQ (https://github.com/PanQiWei/AutoGPTQ) < Finally Merged
+- exLlama support (compute 7 and up for benefits)
 
 
 #### Depends on:
@@ -27,6 +27,7 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 6/8/23
 ```
 exllama support merged
+insane inference speed and working multi-gpu
 ```
 
 5/30/23
