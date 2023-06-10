@@ -2,20 +2,17 @@
 ### Here there be dragons. (But V1 and V2 GPTQ support)
 
 
-- Allow 4bit loras and use of the --autograd implementation.
+- Allow 4bit loras and use of Autograd + AutoGPTQ for inference 
 - Use GPT-J 4-bits (GPTQv1/v2)
 - GPT-NeoXT 4-bits (GPTQv1/v2)
 - 8 bit threshold slider, default 1.5 (pre compute 7.0)
-- load 4-bit lora from web ui
 - V1 Models work in --autograd (declare with --v1)
 - V2 Models work in both.
 - Offloading works in autograd with --gpu-memory but doesn't 100% hodl while generating
 - Offloading with llama_inference_offload, fastest multi-gpu besides exllama
 - Autograd + quant_attn beating Autogtpq on P6000!
-- 4bit loras only work in Autograd + AutoGPTQ
-- Only load one 4bit lora at a time and apply with no loras before switch.
+- Only load one 4bit lora at a time and apply with no loras before switching.
 - Train 4-bit loras with Autograd and hopefully soon AutoGPTQ
-- AutoGPTQ (https://github.com/PanQiWei/AutoGPTQ) < Finally Merged
 - exLlama support (compute 7 and up for benefits)
 - more parameters from UI for remote hosts
 
