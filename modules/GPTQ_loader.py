@@ -132,7 +132,7 @@ def finalize_autograd (model):
        if (shared.args.fused_mlp):
            from model_attn_mlp_patch import make_fused_mlp
            make_fused_mlp(model, is_v1_model=shared.args.v1)
-           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: fused_mlp\nTodo: No loras with MLP yet')
+           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: fused_mlp')
     else:
        from amp_wrapper import AMPWrapper
        wrapper = AMPWrapper(model)
