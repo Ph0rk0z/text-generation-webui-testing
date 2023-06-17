@@ -1,17 +1,5 @@
-<<<<<<< HEAD
 # Text generation web UI Testing
 ### Here there be dragons. (But V1 and V2 GPTQ support)
-=======
-**Vote on the preset arena!**
-
-* Arena: https://oobabooga.github.io/arena/index.html
-* [Preliminary results](https://oobabooga.github.io/arena/preliminary-results.html)
-* [Presets](https://oobabooga.github.io/arena/presets.html)
-* +Info: https://www.reddit.com/r/LocalLLaMA/comments/14adfw2/preset_arena_17205_comparisons_between_241/
-
-# Text generation web UI
->>>>>>> d8d29edf54f224ba3b0daa36fce8fcae8125aa64
-
 
 - Allow 4bit loras and use of Autograd + AutoGPTQ for inference 
 - Use GPT-J 4-bits (GPTQv1/v2)
@@ -393,32 +381,27 @@ Optionally, you can use the following command-line flags:
 | Flag             | Description |
 |------------------|-------------|
 | `--triton`                     | Use triton. |
-| `--no_inject_fused_attention`  | Disable the use of fused attention, which will use less VRAM at the cost of slower inference. |
-| `--no_inject_fused_mlp`        | Triton mode only: disable the use of fused MLP, which will use less VRAM at the cost of slower inference. |
-| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig. |
+| `--quant_attn`  | Ennable the use of fused attention, faster but slightly more vram. |
+| `--fused_mlp`        | Triton mode only: enable the use of fused MLP, which will use lots more vram. |
+| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
 
 #### ExLlama
 
 | Flag             | Description |
 |------------------|-------------|
 |`--gpu-split`     | Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. `20,7,7` |
+|`--nohalf2`       | Disable half2 so pascal can somewhat use exllama. its still not good  |
 
 #### GPTQ-for-LLaMa
 
 | Flag                      | Description |
 |---------------------------|-------------|
-<<<<<<< HEAD
 | `--wbits WBITS`           | GPTQ: Load a pre-quantized model with specified precision in bits. 2, 3, 4 and 8 are supported. |
-| `--model_type MODEL_TYPE` | GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, and GPT-J are supported. |
+| `--model_type MODEL_TYPE` | GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, GPT-NeoX, and GPT-J are supported. |
 | `--groupsize GROUPSIZE`   | GPTQ: Group size. |
-=======
-| `--wbits WBITS`           | Load a pre-quantized model with specified precision in bits. 2, 3, 4 and 8 are supported. |
-| `--model_type MODEL_TYPE` | Model type of pre-quantized model. Currently LLaMA, OPT, and GPT-J are supported. |
-| `--groupsize GROUPSIZE`   | Group size. |
->>>>>>> d8d29edf54f224ba3b0daa36fce8fcae8125aa64
 | `--pre_layer PRE_LAYER [PRE_LAYER ...]`  | The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models. For multi-gpu, write the numbers separated by spaces, eg `--pre_layer 30 60`. |
 | `--checkpoint CHECKPOINT` | The path to the quantized checkpoint file. If not specified, it will be automatically detected. |
-| `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models |
+| `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models. Will now automatically select loader. |
 | `--v1`   | GPTQ: Explicitly declare a GPTQv1 model to load into autograd. |
 | `---mlp_attn`    | MLP attention hijack. Slightly faster inference. |
 | `--quant_attn`         | (triton) Enable quant attention.
