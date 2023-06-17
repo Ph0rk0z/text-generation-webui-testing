@@ -1,21 +1,17 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path("repositories/exllama")))
+from modules import shared
+from modules.logging_colors import logger
 
-import torch
+sys.path.insert(0, str(Path("repositories/exllama")))
 from repositories.exllama.generator import ExLlamaGenerator
 from repositories.exllama.model import ExLlama, ExLlamaCache, ExLlamaConfig
 from repositories.exllama.tokenizer import ExLlamaTokenizer
 
-from modules.logging_colors import logger
-
-import modules.shared as shared
-
 class ExllamaModel:
     def __init__(self):
         pass
-
 
     @classmethod
     def from_pretrained(self, path_to_model):
@@ -37,7 +33,6 @@ class ExllamaModel:
 
         config = ExLlamaConfig(str(model_config_path))
         config.model_path = str(model_path)
-        config.max_seq_len = 2048
 
         # Tuning
         config.matmul_recons_thd = 8
@@ -54,9 +49,11 @@ class ExllamaModel:
         if (shared.args.gpu_split):
             config.set_auto_map(shared.args.gpu_split)
             config.gpu_peer_fix = True
+
         model = ExLlama(config)
-        cache = ExLlamaCache(model)
         tokenizer = ExLlamaTokenizer(str(tokenizer_model_path))
+        cache = ExLlamaCache(model)
+
 
         result = self()
         result.config = config
@@ -66,39 +63,38 @@ class ExllamaModel:
         return result, result
 
 
-    def generate(self, context="", token_count=20, temperature=1, top_p=1, top_k=50, repetition_penalty=None, alpha_frequency=0.1, alpha_presence=0.1, token_ban=None, token_stop=None, callback=None):
-        torch.set_grad_enabled(False)
-        torch.cuda._lazy_init()
-
+    def generate(self, prompt, state, callback=None):
         generator = ExLlamaGenerator(self.model, self.tokenizer, self.cache)
-        generator.settings.temperature = temperature
-        generator.settings.top_p = top_p
-        generator.settings.top_k = top_k
+        generator.settings.temperature = state['temperature']
+        generator.settings.top_p = state['top_p']
+        generator.settings.top_k = state['top_k']
+        generator.settings.typical = state['typical_p']
+        generator.settings.token_repetition_penalty_max = state['repetition_penalty']
+        if state['ban_eos_token']:
+            generator.disallow_tokens([self.tokenizer.eos_token_id])
 
-        text = generator.generate_simple(context, max_new_tokens = token_count)
+        text = generator.generate_simple(prompt, max_new_tokens=state['max_new_tokens'])
         return text
 
-
-    def generate_with_streaming(self, context="", token_count=20, temperature=1, top_p=1, top_k=50, repetition_penalty=None, alpha_frequency=0.1, alpha_presence=0.1, token_ban=None, token_stop=None, callback=None):
-
-        torch.set_grad_enabled(False)
-        torch.cuda._lazy_init()
-
+    def generate_with_streaming(self, prompt, state, callback=None):
         generator = ExLlamaGenerator(self.model, self.tokenizer, self.cache)
-        generator.settings.temperature = temperature
-        generator.settings.top_p = top_p
-        generator.settings.top_k = top_k
+        generator.settings.temperature = state['temperature']
+        generator.settings.top_p = state['top_p']
+        generator.settings.top_k = state['top_k']
+        generator.settings.typical = state['typical_p']
+        generator.settings.token_repetition_penalty_max = state['repetition_penalty']
+        if state['ban_eos_token']:
+            generator.disallow_tokens([self.tokenizer.eos_token_id])
 
         generator.end_beam_search()
-        ids = generator.tokenizer.encode(context)
+        ids = generator.tokenizer.encode(prompt)
         generator.gen_begin(ids)
         initial_len = generator.sequence[0].shape[0]
-        all_tokens = []
-        for i in range(token_count):
+        for i in range(state['max_new_tokens']):
             token = generator.gen_single_token()
-            yield(generator.tokenizer.decode(generator.sequence[0][initial_len:]))
-            if token.item() == generator.tokenizer.eos_token_id: break
-
+            yield (generator.tokenizer.decode(generator.sequence[0][initial_len:]))
+            if token.item() == generator.tokenizer.eos_token_id or shared.stop_everything:
+                break
 
     def encode(self, string, **kwargs):
         return self.tokenizer.encode(string)

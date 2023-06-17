@@ -10,7 +10,6 @@ generation_lock = None
 model = None
 tokenizer = None
 model_name = "None"
-model_type = None
 lora_names = []
 
 # Chat variables
@@ -96,6 +95,9 @@ parser.add_argument('--no-stream', action='store_true', help='Don\'t stream the 
 parser.add_argument('--settings', type=str, help='Load the default interface settings from this yaml file. See settings-template.yaml for an example. If you create a file called settings.yaml, this file will be loaded by default without the need to use the --settings flag.')
 parser.add_argument('--extensions', type=str, nargs="+", help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
 
+# Model loader
+parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, llamacpp, rwkv, flexgen')
+
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
 parser.add_argument('--auto-devices', action='store_true', help='Automatically split the model across the available GPU(s) and CPU.')
@@ -129,6 +131,7 @@ parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt 
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
 
 # GPTQ
+parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ implementation.')
 parser.add_argument('--wbits', type=int, default=0, help='GPTQ: Load a pre-quantized model with specified precision in bits. 2, 3, 4 and 8 are supported.')
 parser.add_argument('--model_type', type=str, help='GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, GPT-NeoX and GPT-J are supported.')
 parser.add_argument('--groupsize', type=int, default=-1, help='GPTQ: Group size.')
@@ -149,14 +152,13 @@ parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Dev
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 #parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
 
-# exllama
+# ExLlama
 parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
 parser.add_argument('--gpu-split', type = str, help = "Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. -gs 20,7,7")
 parser.add_argument('--nohalf2', action='store_true', help='Disable use of half2. Maybe help pascal')
 
-
 # FlexGen
-parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
+parser.add_argument('--flexgen', action='store_true', help='Use flexgen')
 parser.add_argument('--percent', type=int, nargs="+", default=[0, 100, 100, 0, 100, 0], help='FlexGen: allocation percentages. Must be 6 numbers separated by spaces (default: 0, 100, 100, 0, 100, 0).')
 parser.add_argument("--compress-weight", action="store_true", help="FlexGen: activate weight compression.")
 parser.add_argument("--pin-weight", type=str2bool, nargs="?", const=True, default=True, help="FlexGen: whether to pin weights (setting this to False reduces CPU memory by 20%%).")
@@ -192,11 +194,41 @@ parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The m
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
 
+# Loader choosing
+if args.autogptq:
+    args.loader = 'autogptq'
+if args.gptq_for_llama or args.autograd:
+    args.loader = 'gptq-for-llama'
+if args.flexgen:
+    args.loader = 'FlexGen'
+if args.exllama:
+    args.loader = 'ExLlama'
+
+
+
 # Security warnings
 if args.trust_remote_code:
     logger.warning("trust_remote_code is enabled. This is dangerous.")
 if args.share:
     logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
+
+
+def fix_loader_name(name):
+    name = name.lower()
+    if name in ['llamacpp', 'llama.cpp', 'llama-cpp', 'llama cpp']:
+        return 'llama.cpp'
+    elif name in ['transformers', 'huggingface', 'hf', 'hugging_face', 'hugging face']:
+        return 'Transformers'
+    elif name in ['autogptq', 'auto-gptq', 'auto_gptq', 'auto gptq']:
+        return 'AutoGPTQ'
+    elif name in ['gptq-for-llama', 'gptqforllama', 'gptqllama', 'gptq for llama', 'gptq_for_llama', 'gptq']:
+        return 'GPTQ-for-LLaMa'
+    elif name in ['exllama', 'ex-llama', 'ex_llama', 'exlama']:
+        return 'ExLlama'
+
+
+if args.loader is not None:
+    args.loader = fix_loader_name(args.loader)
 
 
 def add_extension(name):
