@@ -22,6 +22,14 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+6/17/23
+```
+New branch https://github.com/Ph0rk0z/text-generation-webui-testing/tree/model-page
+Uses the new loader based model loading. All the kinks aren't worked out yet.
+Definitely required in the future as new inference methods are added.
+Not sure how I feel about it so I'll try it out for a few days first.
+```
+
 6/8/23
 ```
 exllama support merged
