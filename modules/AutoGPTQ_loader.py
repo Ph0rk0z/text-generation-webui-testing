@@ -128,7 +128,7 @@ def load_quantized(model_name):
         model = AutoGPTQForCausalLM.from_quantized(path_to_model,
                                                    device=dev,
                                                    #low_cpu_mem_usage=True,
-                                                   use_triton=shared.args.autogptq_triton,
+                                                   use_triton=shared.args.triton,
                                                    use_safetensors=safetensors,
                                                    quantize_config=quantize_config,
                                                    model_basename=model_file.stem,

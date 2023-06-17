@@ -6,7 +6,7 @@ from modules import shared
 
 loaders_and_params = {
     'AutoGPTQ': [
-        'autogptq_triton',
+        'triton',
         'quant_attn',
         'fused_mlp',
         'wbits',
@@ -17,9 +17,15 @@ loaders_and_params = {
         'cpu_memory',
         'cpu',
         'disk',
-        'autogptq_device_map',
+#        'autogptq_device_map',
         'trust_remote_code',
         'autogptq_info',
+        'attention_info',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
+        'no_cache',
+
     ],
     'GPTQ-for-LLaMa': [
         'wbits',
@@ -32,6 +38,12 @@ loaders_and_params = {
         'fused_mlp',
         'warmup_autotune',
         'gptq_for_llama_info',
+        'attention_info',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
+        'no_cache',
+
     ],
     'llama.cpp': [
         'n_ctx',
@@ -57,7 +69,13 @@ loaders_and_params = {
         'quant_type',
         'compute_dtype',
         'trust_remote_code',
-        'transformers_info'
+        'transformers_info',
+        'attention_info',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
+        'no_cache',
+
     ],
     'ExLlama' : [
         'gpu_split',
