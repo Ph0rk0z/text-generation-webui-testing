@@ -7,10 +7,6 @@ import time
 import traceback
 from pathlib import Path
 
-#For GPTQ and autograd
-#sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
-#sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/gptq_llama")))
-
 import gradio as gr
 import torch
 import transformers
@@ -204,7 +200,7 @@ def clean_path(base_path: str, path: str):
 
 def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch_size: int, batch_size: int, epochs: int, learning_rate: str, lr_scheduler_type: str, lora_rank: int, lora_alpha: int, lora_dropout: float, cutoff_len: int, dataset: str, eval_dataset: str, format: str, eval_steps: int, raw_text_file: str, overlap_len: int, newline_favor_len: int, higher_rank_limit: bool, warmup_steps: int, optimizer: str, hard_cut_string: str, train_only_after: str):
 
-    if shared.args.autograd:
+    if (shared.args.autograd) and shared.args.loader == 'GPTQ-for-LLaMa':
         from monkeypatch.peft_tuners_lora_monkey_patch import \
             replace_peft_model_with_gptq_lora_model
         replace_peft_model_with_gptq_lora_model()
@@ -240,7 +236,7 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
 
         time.sleep(5)
 
-    if shared.args.wbits > 0 and not shared.args.autograd:
+    if shared.args.wbits > 0 and not (shared.args.autograd and shared.args.loader == 'GPTQ-for-LLaMa'):
         yield "LoRA training in 4-bit requires loading with `--autograd`"
         return
 
@@ -387,7 +383,7 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
         yield traceback.format_exc()
         return
 
-    if shared.args.autograd:
+    if (shared.args.autograd) and shared.args.loader == 'GPTQ-for-LLaMa':
         for n, m in lora_model.named_modules():
             if '4bit' in str(type(m)):
                 if shared.args.v1:
