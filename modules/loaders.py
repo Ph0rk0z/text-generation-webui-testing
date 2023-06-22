@@ -84,6 +84,9 @@ loaders_and_params = {
     ],
     'ExLlama_HF' : [
         'gpu_split',
+        'nohalf2',
+        'quant_attn',
+        'fused_mlp',
         'exllama_HF_info',
     ]
 }
