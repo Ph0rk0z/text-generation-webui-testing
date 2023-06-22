@@ -1,3 +1,4 @@
+import ast
 import sys
 from pathlib import Path
 
@@ -65,7 +66,7 @@ class ExllamaModel:
         result.generator = generator
         return result, result
 
-    def generate_with_streaming(self, prompt, state):
+    def generate_with_streaming(self, prompt, state, stopping_strings):
         self.generator.settings.temperature = state['temperature']
         self.generator.settings.top_p = state['top_p']
         self.generator.settings.top_k = state['top_k']
@@ -81,6 +82,21 @@ class ExllamaModel:
         self.generator.gen_begin_reuse(ids)
         initial_len = self.generator.sequence[0].shape[0]
         has_leading_space = False
+
+        all_stopping_strings = []
+        # custom_stopping_strings
+        custom_stopping_strings = state.get('custom_stopping_strings', '')
+        all_stopping_strings += ast.literal_eval(f'[{custom_stopping_strings}]')
+        # stopping_strings
+        if stopping_strings is not None:
+            all_stopping_strings += stopping_strings
+            all_stopping_strings += state.get('stopping_strings', [])
+        # stop_by_newline
+        if state.get('stop_by_newline', False):
+            all_stopping_strings += ['\n']
+        all_stopping_strings = list(set(all_stopping_strings))
+
+        tem_text = ''
         for i in range(state['max_new_tokens']):
             token = self.generator.gen_single_token()
             if i == 0 and self.generator.tokenizer.tokenizer.IdToPiece(int(token)).startswith('▁'):
@@ -90,13 +106,37 @@ class ExllamaModel:
             if has_leading_space:
                 decoded_text = ' ' + decoded_text
 
-            yield decoded_text
+            tem_text = decoded_text
+            yield_text = None
+            for string in all_stopping_strings:
+                if string in tem_text:
+                    # extract tem_text from beginning to the string
+                    new_yield_text = tem_text[:tem_text.find(string)]
+                    # compare with yield_text, pick the shorter one
+                    if yield_text is None or len(new_yield_text) < len(yield_text):
+                        yield_text = new_yield_text
+            if yield_text is not None:
+                # yield the text before the stopping string, then end the generation
+                yield yield_text
+                break
+
+            ends_with_substring = False
+            for string in all_stopping_strings:
+                # if tem_text endswith substring, don't yield anything yet
+                for i in range(len(string)):
+                    if tem_text.endswith(string[:i+1]):
+                        ends_with_substring = True
+                        break
+            # none substring match, yield and clear the tem_text
+            if not ends_with_substring:
+                yield tem_text
+
             if token.item() == self.generator.tokenizer.eos_token_id or shared.stop_everything:
                 break
 
-    def generate(self, prompt, state):
+    def generate(self, prompt, state, stopping_strings):
         output = ''
-        for output in self.generate_with_streaming(prompt, state):
+        for output in self.generate_with_streaming(prompt, state, stopping_strings):
             pass
 
         return output
