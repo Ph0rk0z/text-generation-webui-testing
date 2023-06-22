@@ -77,7 +77,7 @@ class ExllamaHF(PreTrainedModel):
         # TODO: Should give user choice to tune the exllama config
         #config.act_order = True
         config.fused_attn = shared.args.quant_attn
-        config.fused_mlp_thd = 0 if not shared.args.fused_mlp: else 2
+        config.fused_mlp_thd = 0 if not shared.args.fused_mlp else 2
 
         if (shared.args.nohalf2):
             config.rmsnorm_no_half2 = True
