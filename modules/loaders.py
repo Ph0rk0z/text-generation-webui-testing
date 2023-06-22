@@ -81,6 +81,10 @@ loaders_and_params = {
         'gpu_split',
         'nohalf2',
         'exllama_info',
+    ],
+    'ExLlama_HF' : [
+        'gpu_split',
+        'exllama_HF_info',
     ]
 }
 
