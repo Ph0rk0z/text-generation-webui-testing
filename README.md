@@ -381,9 +381,16 @@ Optionally, you can use the following command-line flags:
 | Flag             | Description |
 |------------------|-------------|
 | `--triton`                     | Use triton. |
+<<<<<<< HEAD
 | `--quant_attn`  | Ennable the use of fused attention, faster but slightly more vram. |
 | `--fused_mlp`        | Triton mode only: enable the use of fused MLP, which will use lots more vram. |
 | `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
+=======
+| `--no_inject_fused_attention`  | Disable the use of fused attention, which will use less VRAM at the cost of slower inference. |
+| `--no_inject_fused_mlp`        | Triton mode only: disable the use of fused MLP, which will use less VRAM at the cost of slower inference. |
+| `--no_use_cuda_fp16`           | This can make models faster on some systems. |
+| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig. |
+>>>>>>> 77baf43f6d8f13e4cf9fe0f546c9ca1945107458
 
 #### ExLlama
 
@@ -466,7 +473,7 @@ Out of memory errors? [Check the low VRAM guide](docs/Low-VRAM-guide.md).
 
 Inference settings presets can be created under `presets/` as yaml files. These files are detected automatically at startup.
 
-By default, 10 presets based on NovelAI and KoboldAI presets are included. These were selected out of a sample of 43 presets after applying a K-Means clustering algorithm and selecting the elements closest to the average of each cluster: [tSNE visualization](https://user-images.githubusercontent.com/112222186/228956352-1addbdb9-2456-465a-b51d-089f462cd385.png).
+The presets that are included by default are the result of a contest that received 7215 votes. More details can be found [here](https://github.com/oobabooga/oobabooga.github.io/blob/main/arena/results.md).
 
 ## Contributing
 
@@ -478,5 +485,5 @@ By default, 10 presets based on NovelAI and KoboldAI presets are included. These
 ## Credits
 
 - Gradio dropdown menu refresh button, code for reloading the interface: https://github.com/AUTOMATIC1111/stable-diffusion-webui
-- NovelAI and KoboldAI presets: https://github.com/KoboldAI/KoboldAI-Client/wiki/Settings-Presets
-- Code for early stopping in chat mode, code for some of the sliders: https://github.com/PygmalionAI/gradio-ui/
+- Godlike preset: https://github.com/KoboldAI/KoboldAI-Client/wiki/Settings-Presets
+- Code for some of the sliders: https://github.com/PygmalionAI/gradio-ui/
