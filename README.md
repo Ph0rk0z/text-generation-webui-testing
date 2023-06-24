@@ -21,6 +21,11 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+6/24/23
+```
+Merge the new model page. Hope to break out Autograd into it's own loader soon.
+```
+
 6/17/23
 ```
 New branch https://github.com/Ph0rk0z/text-generation-webui-testing/tree/model-page
