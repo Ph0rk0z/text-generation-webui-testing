@@ -95,6 +95,7 @@ def load_quantized(model_name):
 
     max_memory = None
 
+
     if shared.args.gpu_memory:
         memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
         max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
