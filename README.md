@@ -1,7 +1,6 @@
 # Text generation web UI Testing
 ### Here there be dragons. (But V1 and V2 GPTQ support)
 
-
 - Allow 4bit loras and use of Autograd + AutoGPTQ for inference 
 - Use GPT-J 4-bits (GPTQv1/v2)
 - GPT-NeoXT 4-bits (GPTQv1/v2)
@@ -135,7 +134,7 @@ python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  
 ## Features
 
 * 3 interface modes: default, notebook, and chat
-* Multiple model backends: tranformers, llama.cpp, AutoGPTQ, GPTQ-for-LLaMa, RWKV, FlexGen
+* Multiple model backends: tranformers, llama.cpp, AutoGPTQ, GPTQ-for-LLaMa, ExLlama, RWKV, FlexGen
 * Dropdown menu for quickly switching between different models
 * LoRA: load and unload LoRAs on the fly, load multiple LoRAs at the same time, train a new LoRA
 * Precise instruction templates for chat mode, including Alpaca, Vicuna, Open Assistant, Dolly, Koala, ChatGLM, MOSS, RWKV-Raven, Galactica, StableLM, WizardLM, Baize, Ziya, Chinese-Vicuna, MPT, INCITE, Wizard Mega, KoAlpaca, Vigogne, Bactrian, h2o, and OpenBuddy
@@ -156,9 +155,9 @@ To learn how to use the various features, check out the Documentation: https://g
 
 ### One-click installers
 
-| Windows | Linux | macOS |
-|-------|--------|--------|
-| [oobabooga-windows.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_windows.zip) | [oobabooga-linux.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_linux.zip) |[oobabooga-macos.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_macos.zip) |
+| Windows | Linux | macOS | WSL |
+|--------|--------|--------|--------|
+| [oobabooga-windows.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_windows.zip) | [oobabooga-linux.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_linux.zip) |[oobabooga-macos.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_macos.zip) | [oobabooga-wsl.zip](https://github.com/oobabooga/text-generation-webui/releases/download/installers/oobabooga_wsl.zip) |
 
 Just download the zip above, extract it, and double-click on "start". The web UI and all its dependencies will be installed in the same folder.
 
@@ -336,6 +335,12 @@ Optionally, you can use the following command-line flags:
 | `--extensions EXTENSIONS [EXTENSIONS ...]` | The list of extensions to load. If you want to load more than one extension, write the names separated by spaces. |
 | `--verbose`                                | Print the prompts to the terminal. |
 
+#### Model loader
+
+| Flag                                       | Description |
+|--------------------------------------------|-------------|
+| `--loader LOADER`                          | Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv, flexgen |
+
 #### Accelerate/transformers
 
 | Flag                                        | Description |
@@ -383,19 +388,35 @@ Optionally, you can use the following command-line flags:
 
 | Flag             | Description |
 |------------------|-------------|
-| `--triton`       | Use triton. |
-| `--desc_act`     | For models that don't have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig. |
+| `--triton`                     | Use triton. |
+<<<<<<< HEAD
+| `--quant_attn`  | Ennable the use of fused attention, faster but slightly more vram. |
+| `--fused_mlp`        | Triton mode only: enable the use of fused MLP, which will use lots more vram. |
+| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
+=======
+| `--no_inject_fused_attention`  | Disable the use of fused attention, which will use less VRAM at the cost of slower inference. |
+| `--no_inject_fused_mlp`        | Triton mode only: disable the use of fused MLP, which will use less VRAM at the cost of slower inference. |
+| `--no_use_cuda_fp16`           | This can make models faster on some systems. |
+| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig. |
+>>>>>>> 77baf43f6d8f13e4cf9fe0f546c9ca1945107458
+
+#### ExLlama
+
+| Flag             | Description |
+|------------------|-------------|
+|`--gpu-split`     | Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. `20,7,7` |
+|`--nohalf2`       | Disable half2 so pascal can somewhat use exllama. its still not good  |
 
 #### GPTQ-for-LLaMa
 
 | Flag                      | Description |
 |---------------------------|-------------|
 | `--wbits WBITS`           | GPTQ: Load a pre-quantized model with specified precision in bits. 2, 3, 4 and 8 are supported. |
-| `--model_type MODEL_TYPE` | GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, and GPT-J are supported. |
+| `--model_type MODEL_TYPE` | GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, GPT-NeoX, and GPT-J are supported. |
 | `--groupsize GROUPSIZE`   | GPTQ: Group size. |
 | `--pre_layer PRE_LAYER [PRE_LAYER ...]`  | The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models. For multi-gpu, write the numbers separated by spaces, eg `--pre_layer 30 60`. |
 | `--checkpoint CHECKPOINT` | The path to the quantized checkpoint file. If not specified, it will be automatically detected. |
-| `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models |
+| `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models. Will now automatically select loader. |
 | `--v1`   | GPTQ: Explicitly declare a GPTQv1 model to load into autograd. |
 | `---mlp_attn`    | MLP attention hijack. Slightly faster inference. |
 | `--quant_attn`         | (triton) Enable quant attention.
@@ -408,7 +429,6 @@ Optionally, you can use the following command-line flags:
 
 | Flag             | Description |
 |------------------|-------------|
-| `--flexgen`                       | Enable the use of FlexGen offloading. |
 | `--percent PERCENT [PERCENT ...]` | FlexGen: allocation percentages. Must be 6 numbers separated by spaces (default: 0, 100, 100, 0, 100, 0). |
 | `--compress-weight`               | FlexGen: Whether to compress weight (default: False).|
 | `--pin-weight [PIN_WEIGHT]`       | FlexGen: whether to pin weights (setting this to False reduces CPU memory by 20%). |
@@ -461,7 +481,7 @@ Out of memory errors? [Check the low VRAM guide](docs/Low-VRAM-guide.md).
 
 Inference settings presets can be created under `presets/` as yaml files. These files are detected automatically at startup.
 
-By default, 10 presets based on NovelAI and KoboldAI presets are included. These were selected out of a sample of 43 presets after applying a K-Means clustering algorithm and selecting the elements closest to the average of each cluster: [tSNE visualization](https://user-images.githubusercontent.com/112222186/228956352-1addbdb9-2456-465a-b51d-089f462cd385.png).
+The presets that are included by default are the result of a contest that received 7215 votes. More details can be found [here](https://github.com/oobabooga/oobabooga.github.io/blob/main/arena/results.md).
 
 ## Contributing
 
@@ -473,5 +493,5 @@ By default, 10 presets based on NovelAI and KoboldAI presets are included. These
 ## Credits
 
 - Gradio dropdown menu refresh button, code for reloading the interface: https://github.com/AUTOMATIC1111/stable-diffusion-webui
-- NovelAI and KoboldAI presets: https://github.com/KoboldAI/KoboldAI-Client/wiki/Settings-Presets
-- Code for early stopping in chat mode, code for some of the sliders: https://github.com/PygmalionAI/gradio-ui/
+- Godlike preset: https://github.com/KoboldAI/KoboldAI-Client/wiki/Settings-Presets
+- Code for some of the sliders: https://github.com/PygmalionAI/gradio-ui/

@@ -10,7 +10,7 @@ WORKDIR /build
 
 RUN python3 -m venv /build/venv
 RUN . /build/venv/bin/activate && \
-    pip3 install --upgrade pip setuptools && \
+    pip3 install --upgrade pip setuptools wheel && \
     pip3 install torch torchvision torchaudio && \
     pip3 install -r requirements.txt
 
@@ -30,7 +30,8 @@ LABEL maintainer="Your Name <your.email@example.com>"
 LABEL description="Docker image for GPTQ-for-LLaMa and Text Generation WebUI"
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y libportaudio2 build-essential libasound-dev git python3 python3-pip make g++ cuda-nvcc-11-8 python3-dev && \
+    apt-get install --no-install-recommends -y libportaudio2 build-essential libasound-dev git python3 python3-pip python3-dev make g++ cuda-nvcc-11-8 python3-dev && \
+
     rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install virtualenv
@@ -43,7 +44,7 @@ RUN test -n "${WEBUI_VERSION}" && git reset --hard ${WEBUI_VERSION} || echo "Usi
 
 RUN virtualenv /app/venv
 RUN . /app/venv/bin/activate && \
-    pip3 install --upgrade pip setuptools && \
+    pip3 install --upgrade pip setuptools wheel && \
     pip3 install torch torchvision torchaudio
 
 COPY --from=builder /build /app/repositories/GPTQ-for-LLaMa

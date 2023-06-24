@@ -1,18 +1,49 @@
 from pathlib import Path
 
 import torch
-import sys
+
 import modules.shared as shared
 from modules.logging_colors import logger
+from modules.models import reload_model
 
 from colorama import init, Fore, Back, Style
+from modules.relative_imports import RelativeImport
+
+def add_lora_to_model(lora_names):
+    if (shared.args.autograd) and shared.args.loader == 'GPTQ-for-LLaMa':
+        autograd_add_wrapper(lora_names)
+    elif 'GPTQForCausalLM' in shared.model.__class__.__name__ or shared.args.loader == 'AutoGPTQ':
+        add_lora_autogptq(lora_names)
+    elif shared.model.__class__.__name__ == 'ExllamaModel' or shared.args.loader == 'ExLlama':
+        add_lora_exllama(lora_names)
+    else:
+        add_lora_transformers(lora_names)
+
+
+def autograd_add_wrapper(lora_names):
+
+    # Delete and reload.
+    if len(lora_names) == 0:
+        reload_model()
+        shared.lora_names = []
+        return
+
+    # Add Autograd Lora
+    elif len(lora_names) >= 1:
+       lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+       if (shared.args.quant_attn) or (shared.args.fused_mlp):
+           autograd_inject(lora_path)
+       else:
+           autograd_add(lora_path)
+       print(Style.BRIGHT + Fore.YELLOW + 'Autograd Lora Added:', lora_path)
+       return
 
 def autograd_add (lora_path):
 
     #Loras Do not Stack yet.
 
-    sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
-    from monkeypatch.peft_tuners_lora_monkey_patch import replace_peft_model_with_gptq_lora_model
+    with RelativeImport("repositories/GPTQ-Merged/src/alpaca_lora_4bit"):
+        from monkeypatch.peft_tuners_lora_monkey_patch import replace_peft_model_with_gptq_lora_model
     replace_peft_model_with_gptq_lora_model()
       
     from peft import PeftModel
@@ -28,9 +59,8 @@ def autograd_add (lora_path):
 def autograd_inject (lora_path):
 
     # it's a bit redundant
-    sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
-    import autograd_4bit
-    from autograd_4bit import Autograd4bitQuantLinear, make_quant_for_4bit_autograd
+    with RelativeImport("repositories/GPTQ-Merged/src/alpaca_lora_4bit"):
+        from autograd_4bit import Autograd4bitQuantLinear, make_quant_for_4bit_autograd
 
     shared.model.half() # Required here
     for n, m in shared.model.named_modules():
@@ -57,42 +87,75 @@ def autograd_inject (lora_path):
 
 
 
-def add_lora_to_model(lora_names):
-    prior_set = set(shared.lora_names)
-    added_set = set(lora_names) - prior_set
-    removed_set = prior_set - set(lora_names)
-    shared.lora_names = list(lora_names)
-    
-    # Autograd/Autogptq Remove lora
-    if len(removed_set) > 0 and (shared.args.autograd or shared.args.autogptq):
-       from modules.models import reload_model
-       reload_model() #remove lora
-       return
-    # Add Autograd Lora
-    if shared.args.autograd and len(lora_names) > 0:
-       lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
-       if (shared.args.quant_attn) or (shared.args.fused_mlp):
-           autograd_inject(lora_path)
-       else:
-           autograd_add(lora_path)
-       print(Style.BRIGHT + Fore.YELLOW + 'Autograd Lora Added:', lora_path)
-       return
+
+def add_lora_exllama(lora_names):
+
+    from peft import PeftModel
+    try:
+        from repositories.exllama.lora import ExLlamaLora
+    except:
+        logger.error("Could not find the file repositories/exllama/lora.py. Make sure that exllama is cloned inside repositories/ and is up to date.")
+        return
+
+    if len(lora_names) == 0:
+        shared.model.generator.lora = None
+        shared.lora_names = []
+        return
+    else:
+        if len(lora_names) > 1:
+            logger.warning('ExLlama can only work with 1 LoRA at the moment. Only the first one in the list will be loaded.')
+
+        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+        lora_config_path = lora_path / "adapter_config.json"
+        lora_adapter_path = lora_path / "adapter_model.bin"
+
+        logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join([lora_names[0]])))
+        lora = ExLlamaLora(shared.model.model, str(lora_config_path), str(lora_adapter_path))
+        shared.model.generator.lora = lora
+        shared.lora_names = [lora_names[0]]
+        return
+
+
+# Adapted from https://github.com/Ph0rk0z/text-generation-webui-testing
+def add_lora_autogptq(lora_names):
 
     from peft import PeftModel
 
-    # AutoGPTQ lora for inference
-    if shared.args.autogptq and len(lora_names) > 0:
-        from auto_gptq import AutoGPTQForCausalLM, get_gptq_peft_model
+    try:
+        from auto_gptq import get_gptq_peft_model
         from auto_gptq.utils.peft_utils import GPTQLoraConfig
-        
+    except:
+        logger.error("This version of AutoGPTQ does not support LoRA. You need to install from source or wait for a new release.")
+        return
+
+    if len(lora_names) == 0:
+        reload_model()
+        shared.lora_names = []
+        return
+    else:
+        if len(lora_names) > 1:
+            logger.warning('AutoGPTQ can only work with 1 LoRA at the moment. Only the first one in the list will be loaded.')
+        if shared.args.quant_attn:
+            logger.warning('Quant Atttention + AutoGPTQ may break Lora loading, turn it off!')
+
         peft_config = GPTQLoraConfig(
             inference_mode=True,
         )
-        
-        #logger.info("#####", peft_config)
-        model = get_gptq_peft_model(shared.model, peft_config, Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
-        print(Style.BRIGHT + Fore.BLUE + 'AutoGPTQ Lora Added:', Path(f"{shared.args.lora_dir}/{lora_names[0]}"))
+
+        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+        logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join([lora_names[0]])))
+        shared.model = get_gptq_peft_model(shared.model, peft_config, lora_path)
+        shared.lora_names = [lora_names[0]]
         return
+
+
+def add_lora_transformers(lora_names):
+
+    from peft import PeftModel
+
+    prior_set = set(shared.lora_names)
+    added_set = set(lora_names) - prior_set
+    removed_set = prior_set - set(lora_names)
 
     # If no LoRA needs to be added or removed, exit
     if len(added_set) == 0 and len(removed_set) == 0:
@@ -108,12 +171,10 @@ def add_lora_to_model(lora_names):
 
     # If any LoRA needs to be removed, start over
     if len(removed_set) > 0:
-        shared.model.disable_adapter()  
+        shared.model.disable_adapter()
         shared.model = shared.model.base_model.model
 
-
     if len(lora_names) > 0:
-        logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join(lora_names)))
         params = {}
         if not shared.args.cpu:
             params['dtype'] = shared.model.dtype
@@ -122,12 +183,13 @@ def add_lora_to_model(lora_names):
             elif shared.args.load_in_8bit:
                 params['device_map'] = {'': 0}
 
-
-        shared.model = PeftModel.from_pretrained(shared.model, Path(f"{shared.args.lora_dir}/{lora_names[0]}"), **params)
-
+        logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join(lora_names)))
+        shared.model = PeftModel.from_pretrained(shared.model, Path(f"{shared.args.lora_dir}/{lora_names[0]}"), adapter_name=lora_names[0], **params)
         for lora in lora_names[1:]:
             shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
-      
+
+        shared.lora_names = lora_names
+
         if not shared.args.load_in_8bit and not shared.args.cpu:
             shared.model.half()
             if not hasattr(shared.model, "hf_device_map"):
@@ -136,4 +198,3 @@ def add_lora_to_model(lora_names):
                     shared.model = shared.model.to(device)
                 else:
                     shared.model = shared.model.cuda()
-

@@ -9,8 +9,7 @@ import torch
 import transformers
 
 import modules.shared as shared
-from modules.callbacks import (Iteratorize, Stream,
-                               _SentinelTokenStoppingCriteria)
+from modules.callbacks import Iteratorize, Stream
 from modules.extensions import apply_extensions
 from modules.html_generator import generate_4chan_html, generate_basic_html
 from modules.logging_colors import logger
@@ -31,7 +30,7 @@ def get_max_prompt_length(state):
 
 
 def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_length=None):
-    if shared.model_type in ['rwkv', 'llamacpp']:
+    if shared.model.__class__.__name__ in ['LlamaCppModel', 'RWKVModel']:
         input_ids = shared.tokenizer.encode(str(prompt))
         input_ids = np.array(input_ids).reshape(1, len(input_ids))
         return input_ids
@@ -42,16 +41,11 @@ def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_lengt
         if not add_bos_token and input_ids[0][0] == shared.tokenizer.bos_token_id:
             input_ids = input_ids[:, 1:]
 
-        # Llama adds this extra token when the first character is '\n', and this
-        # compromises the stopping criteria, so we just remove it
-        if type(shared.tokenizer) is transformers.LlamaTokenizer and input_ids[0][0] == 29871:
-            input_ids = input_ids[:, 1:]
-
     # Handling truncation
     if truncation_length is not None:
         input_ids = input_ids[:, -truncation_length:]
 
-    if shared.model_type in ['rwkv', 'llamacpp'] or shared.args.cpu:
+    if shared.model.__class__.__name__ in ['LlamaCppModel', 'RWKVModel', 'ExllamaModel'] or shared.args.cpu:
         return input_ids
     elif shared.args.flexgen:
         return input_ids.numpy()
@@ -99,25 +93,21 @@ def fix_galactica(s):
 
 
 def get_reply_from_output_ids(output_ids, input_ids, original_question, state, is_chat=False):
-    if shared.model_type == 'HF_seq2seq':
+    if shared.is_seq2seq:
         reply = decode(output_ids, state['skip_special_tokens'])
     else:
         new_tokens = len(output_ids) - len(input_ids[0])
         reply = decode(output_ids[-new_tokens:], state['skip_special_tokens'])
-
         # Prevent LlamaTokenizer from skipping a space
-        if type(shared.tokenizer) is transformers.LlamaTokenizer and len(output_ids) > 0:
+        if type(shared.tokenizer) in [transformers.LlamaTokenizer, transformers.LlamaTokenizerFast] and len(output_ids) > 0:
             if shared.tokenizer.convert_ids_to_tokens(int(output_ids[-new_tokens])).startswith('▁'):
                 reply = ' ' + reply
-
-    if not is_chat:
-        reply = apply_extensions('output', reply)
 
     return reply
 
 
 def formatted_outputs(reply, model_name):
-    if shared.model_type == 'gpt4chan':
+    if any(s in model_name for s in ['gpt-4chan', 'gpt4chan']):
         reply = fix_gpt4chan(reply)
         return reply, generate_4chan_html(reply)
     else:
@@ -140,16 +130,43 @@ def stop_everything_event():
     shared.stop_everything = True
 
 
-def generate_reply_wrapper(question, state, eos_token=None, stopping_strings=None):
-    for reply in generate_reply(question, state, eos_token, stopping_strings, is_chat=False):
-        if shared.model_type not in ['HF_seq2seq']:
+def generate_reply_wrapper(question, state, stopping_strings=None):
+    reply = question if not shared.is_seq2seq else ''
+    yield formatted_outputs(reply, shared.model_name)
+
+    for reply in generate_reply(question, state, stopping_strings, is_chat=False):
+        if not shared.is_seq2seq:
             reply = question + reply
 
         yield formatted_outputs(reply, shared.model_name)
 
 
-def _generate_reply(question, state, eos_token=None, stopping_strings=None, is_chat=False):
-    state = apply_extensions('state', state)
+def apply_stopping_strings(reply, all_stop_strings):
+    stop_found = False
+    for string in all_stop_strings:
+        idx = reply.find(string)
+        if idx != -1:
+            reply = reply[:idx]
+            stop_found = True
+            break
+
+    if not stop_found:
+        # If something like "\nYo" is generated just before "\nYou:"
+        # is completed, trim it
+        for string in all_stop_strings:
+            for j in range(len(string) - 1, 0, -1):
+                if reply[-j:] == string[:j]:
+                    reply = reply[:-j]
+                    break
+            else:
+                continue
+
+            break
+
+    return reply, stop_found
+
+
+def _generate_reply(question, state, stopping_strings=None, is_chat=False):
     generate_func = apply_extensions('custom_generate_reply')
     if generate_func is None:
         if shared.model_name == 'None' or shared.model is None:
@@ -157,7 +174,7 @@ def _generate_reply(question, state, eos_token=None, stopping_strings=None, is_c
             yield ''
             return
 
-        if shared.model_type in ['rwkv', 'llamacpp'] or shared.args.exllama:
+        if shared.model.__class__.__name__ in ['LlamaCppModel', 'RWKVModel', 'ExllamaModel']:
             generate_func = generate_reply_custom
         elif shared.args.flexgen:
             generate_func = generate_reply_flexgen
@@ -167,7 +184,14 @@ def _generate_reply(question, state, eos_token=None, stopping_strings=None, is_c
     # Preparing the input
     original_question = question
     if not is_chat:
+        state = apply_extensions('state', state)
         question = apply_extensions('input', question)
+
+    # Finding the stopping strings
+    all_stop_strings = []
+    for st in (stopping_strings, ast.literal_eval(f"[{state['custom_stopping_strings']}]")):
+        if type(st) is list and len(st) > 0:
+            all_stop_strings += st
 
     if shared.args.verbose:
         print(f'\n\n{question}\n--------------------\n')
@@ -175,23 +199,30 @@ def _generate_reply(question, state, eos_token=None, stopping_strings=None, is_c
     shared.stop_everything = False
     clear_torch_cache()
     seed = set_manual_seed(state['seed'])
-    is_stream = state['stream']
     last_update = -1
     reply = ''
-    for reply in generate_func(question, original_question, seed, state, eos_token, stopping_strings, is_chat=is_chat):
+    is_stream = state['stream']
+    if len(all_stop_strings) > 0 and not state['stream']:
+        state['stream'] = True
+
+    for reply in generate_func(question, original_question, seed, state, stopping_strings, is_chat=is_chat):
+        reply, stop_found = apply_stopping_strings(reply, all_stop_strings)
         if is_stream:
             cur_time = time.time()
             if cur_time - last_update > 0.041666666666666664:  # Limit streaming to 24 fps
                 last_update = cur_time
                 yield reply
-        else:
-            yield reply
 
-    if is_stream:
-        yield reply
+        if stop_found:
+            break
+
+    if not is_chat:
+        reply = apply_extensions('output', reply)
+
+    yield reply
 
 
-def generate_reply_HF(question, original_question, seed, state, eos_token=None, stopping_strings=None, is_chat=False):
+def generate_reply_HF(question, original_question, seed, state, stopping_strings=None, is_chat=False):
     generate_params = {}
     for k in ['max_new_tokens', 'do_sample', 'temperature', 'top_p', 'typical_p', 'repetition_penalty', 'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 'early_stopping', 'tfs', 'top_a', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta']:
         generate_params[k] = state[k]
@@ -214,11 +245,6 @@ def generate_reply_HF(question, original_question, seed, state, eos_token=None, 
     output = input_ids[0]
     cuda = not any((shared.args.cpu, shared.args.deepspeed))
 
-    # Find the eos tokens
-    eos_token_ids = [shared.tokenizer.eos_token_id] if shared.tokenizer.eos_token_id is not None else []
-    if eos_token is not None:
-        eos_token_ids.append(int(encode(eos_token)[0][-1]))
-
     # Add the encoded tokens to generate_params
     question, input_ids, inputs_embeds = apply_extensions('tokenizer', state, question, input_ids, None)
     original_input_ids = input_ids
@@ -226,21 +252,14 @@ def generate_reply_HF(question, original_question, seed, state, eos_token=None, 
     if inputs_embeds is not None:
         generate_params.update({'inputs_embeds': inputs_embeds})
 
-    # Create the StoppingCriteriaList with the stopping strings (needs to be done after tokenizer extensions)
-    stopping_criteria_list = transformers.StoppingCriteriaList()
-    for st in (stopping_strings, ast.literal_eval(f"[{state['custom_stopping_strings']}]")):
-        if type(st) is list and len(st) > 0:
-            sentinel_token_ids = [encode(string, add_special_tokens=False) for string in st]
-            stopping_criteria_list.append(_SentinelTokenStoppingCriteria(sentinel_token_ids=sentinel_token_ids, starting_idx=len(input_ids[0])))
-            break
-
-    # Update generate_params with the eos token and the stopping strings
+    # Find the eos tokens
+    eos_token_ids = [shared.tokenizer.eos_token_id] if shared.tokenizer.eos_token_id is not None else []
     generate_params['eos_token_id'] = eos_token_ids
-    generate_params['stopping_criteria'] = stopping_criteria_list
+    generate_params['stopping_criteria'] = transformers.StoppingCriteriaList()
 
     t0 = time.time()
     try:
-        if not is_chat and shared.model_type != 'HF_seq2seq':
+        if not is_chat and not shared.is_seq2seq:
             yield ''
 
         # Generate the entire reply at once.
@@ -256,14 +275,14 @@ def generate_reply_HF(question, original_question, seed, state, eos_token=None, 
         # This is based on the trick of using 'stopping_criteria' to create an iterator.
         else:
 
-            def generate_with_callback(callback=None, **kwargs):
+            def generate_with_callback(callback=None, *args, **kwargs):
                 kwargs['stopping_criteria'].append(Stream(callback_func=callback))
                 clear_torch_cache()
                 with torch.no_grad():
                     shared.model.generate(**kwargs)
 
             def generate_with_streaming(**kwargs):
-                return Iteratorize(generate_with_callback, kwargs, callback=None)
+                return Iteratorize(generate_with_callback, [], kwargs, callback=None)
 
             with generate_with_streaming(**generate_params) as generator:
                 for output in generator:
@@ -276,20 +295,13 @@ def generate_reply_HF(question, original_question, seed, state, eos_token=None, 
     finally:
         t1 = time.time()
         original_tokens = len(original_input_ids[0])
-        new_tokens = len(output) - (original_tokens if shared.model_type != 'HF_seq2seq' else 0)
+        new_tokens = len(output) - (original_tokens if not shared.is_seq2seq else 0)
         print(f'Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})')
         return
 
 
-def generate_reply_custom(question, original_question, seed, state, eos_token=None, stopping_strings=None, is_chat=False):
+def generate_reply_custom(question, original_question, seed, state, stopping_strings=None, is_chat=False):
     seed = set_manual_seed(state['seed'])
-    generate_params = {'token_count': state['max_new_tokens']}
-    for k in ['temperature', 'top_p', 'top_k', 'repetition_penalty']:
-        generate_params[k] = state[k]
-
-    if shared.model_type == 'llamacpp':
-        for k in ['mirostat_mode', 'mirostat_tau', 'mirostat_eta']:
-            generate_params[k] = state[k]
 
     t0 = time.time()
     reply = ''
@@ -298,16 +310,10 @@ def generate_reply_custom(question, original_question, seed, state, eos_token=No
             yield ''
 
         if not state['stream']:
-            reply = shared.model.generate(context=question, **generate_params)
-            if not is_chat:
-                reply = apply_extensions('output', reply)
-
+            reply = shared.model.generate(question, state)
             yield reply
         else:
-            for reply in shared.model.generate_with_streaming(context=question, **generate_params):
-                if not is_chat:
-                    reply = apply_extensions('output', reply)
-
+            for reply in shared.model.generate_with_streaming(question, state):
                 yield reply
 
     except Exception:
@@ -320,7 +326,7 @@ def generate_reply_custom(question, original_question, seed, state, eos_token=No
         return
 
 
-def generate_reply_flexgen(question, original_question, seed, state, eos_token=None, stopping_strings=None, is_chat=False):
+def generate_reply_flexgen(question, original_question, seed, state, stopping_strings=None, is_chat=False):
     generate_params = {}
     for k in ['max_new_tokens', 'do_sample', 'temperature']:
         generate_params[k] = state[k]
@@ -334,8 +340,8 @@ def generate_reply_flexgen(question, original_question, seed, state, eos_token=N
 
     # Find the eos tokens
     eos_token_ids = [shared.tokenizer.eos_token_id] if shared.tokenizer.eos_token_id is not None else []
-    if eos_token is not None:
-        eos_token_ids.append(int(encode(eos_token)[0][-1]))
+    if not state['ban_eos_token']:
+        generate_params['stop'] = eos_token_ids[-1]
 
     # Add the encoded tokens to generate_params
     question, input_ids, inputs_embeds = apply_extensions('tokenizer', state, question, input_ids, None)
@@ -343,9 +349,6 @@ def generate_reply_flexgen(question, original_question, seed, state, eos_token=N
     generate_params.update({'inputs': input_ids})
     if inputs_embeds is not None:
         generate_params.update({'inputs_embeds': inputs_embeds})
-
-    # Update generate_params with the eos token and the stopping strings
-    generate_params['stop'] = eos_token_ids[-1]
 
     t0 = time.time()
     try:
@@ -381,6 +384,6 @@ def generate_reply_flexgen(question, original_question, seed, state, eos_token=N
     finally:
         t1 = time.time()
         original_tokens = len(original_input_ids[0])
-        new_tokens = len(output) - (original_tokens if shared.model_type != 'HF_seq2seq' else 0)
+        new_tokens = len(output) - (original_tokens if not shared.is_seq2seq else 0)
         print(f'Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})')
         return

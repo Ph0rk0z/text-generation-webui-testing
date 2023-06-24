@@ -95,6 +95,7 @@ def load_quantized(model_name):
 
     max_memory = None
 
+
     if shared.args.gpu_memory:
         memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
         max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
@@ -128,7 +129,7 @@ def load_quantized(model_name):
         model = AutoGPTQForCausalLM.from_quantized(path_to_model,
                                                    device=dev,
                                                    #low_cpu_mem_usage=True,
-                                                   use_triton=shared.args.autogptq_triton,
+                                                   use_triton=shared.args.triton,
                                                    use_safetensors=safetensors,
                                                    quantize_config=quantize_config,
                                                    model_basename=model_file.stem,
@@ -142,5 +143,19 @@ def load_quantized(model_name):
     except ValueError:
         logger.error('Could not load model.')
         raise Exception('Could not load model. ')
+
+    # These lines fix the multimodal extension when used with AutoGPTQ
+    if hasattr(model, 'model'):
+        if not hasattr(model, 'dtype'):
+            if hasattr(model.model, 'dtype'):
+                model.dtype = model.model.dtype
+
+        if hasattr(model.model, 'model') and hasattr(model.model.model, 'embed_tokens'):
+            if not hasattr(model, 'embed_tokens'):
+                model.embed_tokens = model.model.model.embed_tokens
+
+            if not hasattr(model.model, 'embed_tokens'):
+                model.model.embed_tokens = model.model.model.embed_tokens
+
 
     return model
