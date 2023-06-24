@@ -290,13 +290,13 @@ def generate_reply_custom(question, original_question, seed, state, eos_token=No
             yield ''
 
         if not state['stream']:
-            reply = shared.model.generate(question, state, stopping_strings)
+            reply = shared.model.generate(question, state)
             if not is_chat:
                 reply = apply_extensions('output', reply)
 
             yield reply
         else:
-            for reply in shared.model.generate_with_streaming(question, state, stopping_strings):
+            for reply in shared.model.generate_with_streaming(question, state):
                 if not is_chat:
                     reply = apply_extensions('output', reply)
 

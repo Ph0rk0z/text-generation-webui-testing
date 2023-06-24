@@ -7,7 +7,6 @@ https://abetlen.github.io/llama-cpp-python/
 '''
 
 import re
-import ast
 from functools import partial
 
 from llama_cpp import Llama, LlamaCache, LogitsProcessorList
@@ -15,6 +14,7 @@ from llama_cpp import Llama, LlamaCache, LogitsProcessorList
 from modules import shared
 from modules.callbacks import Iteratorize
 from modules.logging_colors import logger
+
 
 def ban_eos_logits_processor(eos_token, input_ids, logits):
     logits[eos_token] = -float('inf')
@@ -65,22 +65,8 @@ class LlamaCppModel:
 
         return self.model.tokenize(string)
 
-    def generate(self, prompt, state, stopping_strings, callback=None):
+    def generate(self, prompt, state, callback=None):
         prompt = prompt if type(prompt) is str else prompt.decode()
-
-        all_stopping_strings = []
-        # custom_stopping_strings
-        custom_stopping_strings = state.get('custom_stopping_strings', '')
-        all_stopping_strings += ast.literal_eval(f'[{custom_stopping_strings}]')
-        # stopping_strings
-        if stopping_strings is not None:
-            all_stopping_strings += stopping_strings
-            all_stopping_strings += state.get('stopping_strings', [])
-        # stop_by_newline
-        if state.get('stop_by_newline', False):
-            all_stopping_strings += ['\n']
-        all_stopping_strings = list(set(all_stopping_strings))
-
         completion_chunks = self.model.create_completion(
             prompt=prompt,
             max_tokens=state['max_new_tokens'],
@@ -93,7 +79,6 @@ class LlamaCppModel:
             mirostat_tau=state['mirostat_tau'],
             mirostat_eta=state['mirostat_eta'],
             stream=True,
-            stop=all_stopping_strings,
             logits_processor=LogitsProcessorList([
                 partial(ban_eos_logits_processor, self.model.token_eos()),
             ]) if state['ban_eos_token'] else None,
@@ -105,9 +90,6 @@ class LlamaCppModel:
             output += text
             if callback:
                 callback(text)
-
-            if shared.stop_everything:
-                break
 
         return output
 

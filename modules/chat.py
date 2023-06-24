@@ -145,32 +145,28 @@ def get_stopping_strings(state):
         ]
 
     stopping_strings += ast.literal_eval(f"[{state['custom_stopping_strings']}]")
-    stopping_strings += state.get('stopping_strings', [])
-    return list(set(stopping_strings))
+    return stopping_strings
 
 
 def extract_message_from_reply(reply, state):
-    stop_by_reply = False
+    next_character_found = False
     stopping_strings = get_stopping_strings(state)
 
     if state['stop_at_newline']:
         lines = reply.split('\n')
         reply = lines[0].strip()
         if len(lines) > 1:
-            # stop by newline
-            stop_by_reply = True
+            next_character_found = True
     else:
         for string in stopping_strings:
             idx = reply.find(string)
             if idx != -1:
                 reply = reply[:idx]
-                # stop by stopping_strings
-                # including both custom_stopping_strings and character names 
-                stop_by_reply = True
+                next_character_found = True
 
         # If something like "\nYo" is generated just before "\nYou:"
         # is completed, trim it
-        if not stop_by_reply:
+        if not next_character_found:
             for string in stopping_strings:
                 for j in range(len(string) - 1, 0, -1):
                     if reply[-j:] == string[:j]:
@@ -181,7 +177,7 @@ def extract_message_from_reply(reply, state):
 
                 break
 
-    return reply, stop_by_reply
+    return reply, next_character_found
 
 
 def chatbot_wrapper(text, history, state, regenerate=False, _continue=False, loading_message=True):
@@ -239,9 +235,15 @@ def chatbot_wrapper(text, history, state, regenerate=False, _continue=False, loa
             reply = cumulative_reply + reply
 
             # Extract the reply
-            reply, stop_by_reply = extract_message_from_reply(reply, state)
+            reply, next_character_found = extract_message_from_reply(reply, state)
             visible_reply = re.sub("(<USER>|<user>|{{user}})", state['name1'], reply)
             visible_reply = apply_extensions("output", visible_reply)
+
+            # We need this global variable to handle the Stop event,
+            # otherwise gradio gets confused
+            if shared.stop_everything:
+                yield output
+                return
 
             if just_started:
                 just_started = False
@@ -260,13 +262,7 @@ def chatbot_wrapper(text, history, state, regenerate=False, _continue=False, loa
                 if state['stream']:
                     yield output
 
-            # We need this global variable to handle the Stop event,
-            # otherwise gradio gets confused
-            if shared.stop_everything:
-                yield output
-                return
-
-            if stop_by_reply:
+            if next_character_found:
                 break
 
         if reply in [None, cumulative_reply]:
@@ -295,12 +291,12 @@ def impersonate_wrapper(text, start_with, state):
         reply = None
         for reply in generate_reply(prompt + cumulative_reply, state, eos_token=eos_token, stopping_strings=stopping_strings, is_chat=True):
             reply = cumulative_reply + reply
-            reply, stop_by_reply = extract_message_from_reply(reply, state)
+            reply, next_character_found = extract_message_from_reply(reply, state)
             yield reply.lstrip(' ')
             if shared.stop_everything:
                 return
 
-            if stop_by_reply:
+            if next_character_found:
                 break
 
         if reply in [None, cumulative_reply]:
