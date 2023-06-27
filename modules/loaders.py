@@ -17,7 +17,6 @@ loaders_and_params = {
         'cpu_memory',
         'cpu',
         'disk',
-#        'autogptq_device_map',
         'trust_remote_code',
         'autogptq_info',
         'attention_info',
@@ -25,7 +24,6 @@ loaders_and_params = {
         'xformers',
         'sdp_attention',
         'no_cache',
-
     ],
     'GPTQ-for-LLaMa': [
         'wbits',
@@ -43,7 +41,6 @@ loaders_and_params = {
         'xformers',
         'sdp_attention',
         'no_cache',
-
     ],
     'llama.cpp': [
         'n_ctx',
@@ -75,7 +72,6 @@ loaders_and_params = {
         'xformers',
         'sdp_attention',
         'no_cache',
-
     ],
     'ExLlama' : [
         'gpu_split',
