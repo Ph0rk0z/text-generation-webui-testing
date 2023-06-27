@@ -394,16 +394,9 @@ Optionally, you can use the following command-line flags:
 | Flag             | Description |
 |------------------|-------------|
 | `--triton`                     | Use triton. |
-<<<<<<< HEAD
 | `--quant_attn`  | Ennable the use of fused attention, faster but slightly more vram. |
 | `--fused_mlp`        | Triton mode only: enable the use of fused MLP, which will use lots more vram. |
-| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
-=======
-| `--no_inject_fused_attention`  | Disable the use of fused attention, which will use less VRAM at the cost of slower inference. |
-| `--no_inject_fused_mlp`        | Triton mode only: disable the use of fused MLP, which will use less VRAM at the cost of slower inference. |
-| `--no_use_cuda_fp16`           | This can make models faster on some systems. |
-| `--desc_act`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig. |
->>>>>>> 77baf43f6d8f13e4cf9fe0f546c9ca1945107458
+| `autogptq_act_order`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
 
 #### ExLlama
 
@@ -411,6 +404,8 @@ Optionally, you can use the following command-line flags:
 |------------------|-------------|
 |`--gpu-split`     | Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. `20,7,7` |
 |`--nohalf2`       | Disable half2 so pascal can somewhat use exllama. its still not good  |
+|`--max_seq_len MAX_SEQ_LEN`           | Maximum sequence length. |
+|`--compress_pos_emb COMPRESS_POS_EMB` | Positional embeddings compression factor. Should typically be set to max_seq_len / 2048. |
 
 #### GPTQ-for-LLaMa
 
