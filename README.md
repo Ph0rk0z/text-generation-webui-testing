@@ -23,8 +23,7 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 7/1/23
 ```
-Add Panchovix's RoPE scaling. Longer context with no SuperHOT. PR needs merging to main exLlama
-Have done it here for ease of use: https://github.com/Ph0rk0z/exllama
+Add Panchovix's RoPE scaling. Longer context with no SuperHOT. 
 Uninstall the pip module if you use it and probably don't use it if you want latest fixes.
 ```
 
