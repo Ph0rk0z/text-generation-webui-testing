@@ -156,6 +156,7 @@ parser.add_argument('--gpu-split', type = str, help = "Comma-separated list of V
 parser.add_argument('--nohalf2', action='store_true', help='Disable use of half2. Maybe help pascal')
 parser.add_argument('--max_seq_len', type=int, default=2048, help="Maximum sequence length.")
 parser.add_argument('--compress_pos_emb', type=int, default=1, help="Positional embeddings compression factor. Should typically be set to max_seq_len / 2048.")
+parser.add_argument('--alpha_emb', type=int, default=1, help="Positional embeddings alpha factor. Should typically be set to max_seq_len / 2048.
 
 # FlexGen
 parser.add_argument('--flexgen', action='store_true', help='Use flexgen')
