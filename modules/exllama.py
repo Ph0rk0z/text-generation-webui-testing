@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+from torch import version as torch_version
+
 from modules import shared
 from modules.logging_colors import logger
 
@@ -52,7 +54,7 @@ class ExllamaModel:
         config.sdp_thd = 8
         config.matmul_fused_remap = False
 
-        if (shared.args.nohalf2):
+        if (shared.args.nohalf2 or torch_version.hip):
             config.rmsnorm_no_half2 = True
             config.rope_no_half2 = True
             config.matmul_no_half2 = True
@@ -85,6 +87,7 @@ class ExllamaModel:
         self.generator.settings.top_k = state['top_k']
         self.generator.settings.typical = state['typical_p']
         self.generator.settings.token_repetition_penalty_max = state['repetition_penalty']
+        self.generator.settings.token_repetition_penalty_sustain = -1 if state['repetition_penalty_range'] <= 0 else state['repetition_penalty_range']
         if state['ban_eos_token']:
             self.generator.disallow_tokens([self.tokenizer.eos_token_id])
         else:
