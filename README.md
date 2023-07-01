@@ -21,6 +21,13 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+7/1/23
+```
+Add Panchovix's RoPE scaling. Longer context with no SuperHOT. PR needs merging to main exLlama
+Have done it here for ease of use: https://github.com/Ph0rk0z/exllama
+Uninstall the pip module if you use it and probably don't use it if you want latest fixes.
+```
+
 6/24/23
 ```
 Merge the new model page. Hope to break out Autograd into it's own loader soon.
