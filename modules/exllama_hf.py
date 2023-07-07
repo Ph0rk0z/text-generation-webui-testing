@@ -97,8 +97,8 @@ class ExllamaHF(PreTrainedModel):
         if shared.args.gpu_split:
             config.set_auto_map(shared.args.gpu_split)
             config.gpu_peer_fix = True
-        if shared.args.alpha_emb:
-            config.alpha_value = shared.args.alpha_emb
+        if shared.args.alpha_value:
+            config.alpha_value = shared.args.alpha_value
             config.calculate_rotary_embedding_base()
         
         config.fused_attn = shared.args.quant_attn

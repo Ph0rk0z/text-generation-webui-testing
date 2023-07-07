@@ -78,7 +78,7 @@ loaders_and_params = {
         'nohalf2',
         'max_seq_len',
         'compress_pos_emb',
-        'alpha_emb',
+        'alpha_value',
         'exllama_info',
     ],
     'ExLlama_HF' : [
@@ -88,7 +88,7 @@ loaders_and_params = {
         'fused_mlp',
         'max_seq_len',
         'compress_pos_emb',
-        'alpha_emb',
+        'alpha_value',
         'exllama_HF_info',
     ]
 }
