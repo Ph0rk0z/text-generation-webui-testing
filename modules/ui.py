@@ -86,7 +86,6 @@ def list_model_elements():
 
 def list_interface_input_elements():
     elements = [
-        'preset_menu',
         'max_new_tokens',
         'seed',
         'temperature',
@@ -168,8 +167,7 @@ def apply_interface_values(state, use_persistent=False):
     if len(state) == 0:
         return [gr.update() for k in elements]  # Dummy, do nothing
     else:
-        ans = [state[k] if k in state else gr.update() for k in elements]
-        return ans
+        return [state[k] if k in state else gr.update() for k in elements]
 
 
 class ToolButton(gr.Button, gr.components.FormComponent):
