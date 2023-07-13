@@ -48,6 +48,7 @@ loaders_and_params = {
         'n_batch',
         'threads',
         'no_mmap',
+        'low_vram',
         'mlock',
         'llama_cpp_seed',
     ],
@@ -73,7 +74,7 @@ loaders_and_params = {
         'sdp_attention',
         'no_cache',
     ],
-    'ExLlama' : [
+    'ExLlama': [
         'gpu_split',
         'nohalf2',
         'max_seq_len',
@@ -81,7 +82,7 @@ loaders_and_params = {
         'alpha_value',
         'exllama_info',
     ],
-    'ExLlama_HF' : [
+    'ExLlama_HF': [
         'gpu_split',
         'nohalf2',
         'quant_attn',

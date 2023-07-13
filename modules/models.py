@@ -61,6 +61,10 @@ def load_model(model_name, loader=None):
         'ExLlama_HF': ExLlama_HF_loader
     }
 
+    p = Path(model_name)
+    if p.exists():
+        model_name = p.parts[-1]
+
     if loader is None:
         if shared.args.loader is not None:
             loader = shared.args.loader
@@ -102,11 +106,11 @@ def load_tokenizer(model_name, model):
                 use_fast=False
             )
         except ValueError:
-             tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer = AutoTokenizer.from_pretrained(
                 path_to_model,
                 trust_remote_code=shared.args.trust_remote_code,
                 use_fast=True
-            )           
+            )
 
     if tokenizer.__class__.__name__ == 'LlamaTokenizer':
         pairs = [
@@ -324,6 +328,7 @@ def clear_torch_cache():
 def unload_model():
     shared.model = shared.tokenizer = None
     shared.lora_names = []
+    shared.model_dirty_from_training = False
     clear_torch_cache()
 
 
