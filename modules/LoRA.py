@@ -14,7 +14,6 @@ def add_lora_to_model(lora_names):
         autograd_add_wrapper(lora_names)
     elif 'GPTQForCausalLM' in shared.model.__class__.__name__ or shared.args.loader == 'AutoGPTQ':
         add_lora_autogptq(lora_names)
-
     elif shared.model.__class__.__name__ in ['ExllamaModel', 'ExllamaHF'] or shared.args.loader == ['ExLlama', 'ExllamaHF']:
         add_lora_exllama(lora_names)
     else:
@@ -185,14 +184,14 @@ def add_lora_transformers(lora_names):
     # If any LoRA needs to be removed, start over
     if len(removed_set) > 0:
         # shared.model may no longer be PeftModel
-        if hasattr(shared.model, 'disable_adapter'):  
-            shared.model.disable_adapter()  
+        if hasattr(shared.model, 'disable_adapter'):
+            shared.model.disable_adapter()
             shared.model = shared.model.base_model.model
 
     if len(lora_names) > 0:
         params = {}
         if not shared.args.cpu:
-            if shared.args.load_in_4bit or shared.args.load_in_8bit: 
+            if shared.args.load_in_4bit or shared.args.load_in_8bit:
                 params['peft_type'] = shared.model.dtype
             else:
                 params['dtype'] = shared.model.dtype
