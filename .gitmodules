@@ -16,3 +16,6 @@
 [submodule "repositories/exllama"]
 	path = repositories/exllama
 	url = https://github.com/turboderp/exllama
+[submodule "extensions/Playground"]
+	path = extensions/Playground
+	url = https://github.com/FartyPants/Playground
