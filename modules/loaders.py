@@ -52,6 +52,17 @@ loaders_and_params = {
         'mlock',
         'llama_cpp_seed',
     ],
+    'llamacpp_HF': [
+        'n_ctx',
+        'n_gpu_layers',
+        'n_batch',
+        'threads',
+        'no_mmap',
+        'low_vram',
+        'mlock',
+        'llama_cpp_seed',
+        'llamacpp_HF_info',
+    ],
     'Transformers': [
         'cpu_memory',
         'gpu_memory',
