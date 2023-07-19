@@ -35,7 +35,7 @@ settings = {
     'dark_theme': True,
     'max_new_tokens': 200,
     'max_new_tokens_min': 1,
-    'max_new_tokens_max': 2000,
+    'max_new_tokens_max': 4096,
     'seed': -1,
     'character': 'None',
     'name1': 'You',
