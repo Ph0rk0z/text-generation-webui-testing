@@ -106,7 +106,7 @@ class ExllamaHF(PreTrainedModel):
         config.compress_pos_emb = shared.args.compress_pos_emb
         if shared.args.gpu_split:
             config.set_auto_map(shared.args.gpu_split)
-            config.gpu_peer_fix = True
+            config.gpu_peer_fix = False
         if shared.args.alpha_value:
             config.alpha_value = shared.args.alpha_value
             config.calculate_rotary_embedding_base()
