@@ -31,8 +31,8 @@ reload_inputs = []  # Parameters for reloading the chat interface
 need_restart = False
 
 settings = {
-    'autoload_model': False,
     'dark_theme': True,
+    'autoload_model': False,
     'max_new_tokens': 200,
     'max_new_tokens_min': 1,
     'max_new_tokens_max': 4096,
@@ -61,7 +61,7 @@ settings = {
     'chat_generation_attempts_max': 10,
     'default_extensions': [],
     'chat_default_extensions': ['gallery'],
-    'preset': 'simple-1',
+    'preset': 'Divine Intellect',
     'prompt': 'QA',
 }
 
@@ -94,7 +94,7 @@ parser.add_argument('--settings', type=str, help='Load the default interface set
 parser.add_argument('--extensions', type=str, nargs="+", help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
 
 # Model loader
-parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv, flexgen')
+parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv')
 
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
@@ -128,6 +128,8 @@ parser.add_argument('--cache-capacity', type=str, help='Maximum cache capacity. 
 parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layers to offload to the GPU.')
 parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
+parser.add_argument('--n_gqa', type=int, default=0, help='grouped-query attention. Must be 8 for llama2 70b.')
+parser.add_argument('--rms_norm_eps', type=float, default=0, help='Must be 1e-5 for llama2 70b.')
 
 # GPTQ
 parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ implementation.')
@@ -156,14 +158,6 @@ parser.add_argument('--exllama', action='store_true', help='Use exllama to load 
 parser.add_argument('--gpu-split', type = str, help = "Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. -gs 20,7,7")
 parser.add_argument('--nohalf2', action='store_true', help='Disable use of half2. Maybe help pascal')
 parser.add_argument('--max_seq_len', type=int, default=2048, help="Maximum sequence length.")
-parser.add_argument('--compress_pos_emb', type=int, default=1, help="Positional embeddings compression factor. Should typically be set to max_seq_len / 2048.")
-parser.add_argument('--alpha_value', type=int, default=1, help="Positional embeddings alpha factor for NTK RoPE scaling. Same as above. Use either this or compress_pos_emb, not both.")
-
-# FlexGen
-parser.add_argument('--flexgen', action='store_true', help='Use flexgen')
-parser.add_argument('--percent', type=int, nargs="+", default=[0, 100, 100, 0, 100, 0], help='FlexGen: allocation percentages. Must be 6 numbers separated by spaces (default: 0, 100, 100, 0, 100, 0).')
-parser.add_argument("--compress-weight", action="store_true", help="FlexGen: activate weight compression.")
-parser.add_argument("--pin-weight", type=str2bool, nargs="?", const=True, default=True, help="FlexGen: whether to pin weights (setting this to False reduces CPU memory by 20%%).")
 
 # DeepSpeed
 parser.add_argument('--deepspeed', action='store_true', help='Enable the use of DeepSpeed ZeRO-3 for inference via the Transformers integration.')
@@ -173,6 +167,10 @@ parser.add_argument('--local_rank', type=int, default=0, help='DeepSpeed: Option
 # RWKV
 parser.add_argument('--rwkv-strategy', type=str, default=None, help='RWKV: The strategy to use while loading the model. Examples: "cpu fp32", "cuda fp16", "cuda fp16i8".')
 parser.add_argument('--rwkv-cuda-on', action='store_true', help='RWKV: Compile the CUDA kernel for better performance.')
+
+# RoPE
+parser.add_argument('--compress_pos_emb', type=int, default=1, help="Positional embeddings compression factor. Should typically be set to max_seq_len / 2048.")
+parser.add_argument('--alpha_value', type=int, default=1, help="Positional embeddings alpha factor for NTK RoPE scaling. Scaling is not identical to embedding compression. Use either this or compress_pos_emb, not both.")
 
 # Gradio
 parser.add_argument('--listen', action='store_true', help='Make the web UI reachable from your local network.')
@@ -201,12 +199,8 @@ if args.autogptq:
     args.loader = 'autogptq'
 if args.gptq_for_llama or args.autograd:
     args.loader = 'gptq-for-llama'
-if args.flexgen:
-    args.loader = 'FlexGen'
 if args.exllama:
     args.loader = 'ExLlama'
-
-
 
 # Security warnings
 if args.trust_remote_code:

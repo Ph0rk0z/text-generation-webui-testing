@@ -44,6 +44,8 @@ loaders_and_params = {
     ],
     'llama.cpp': [
         'n_ctx',
+        'n_gqa',
+        'rms_norm_eps',
         'n_gpu_layers',
         'n_batch',
         'threads',
@@ -56,6 +58,8 @@ loaders_and_params = {
     ],
     'llamacpp_HF': [
         'n_ctx',
+        'n_gqa',
+        'rms_norm_eps',
         'n_gpu_layers',
         'n_batch',
         'threads',
