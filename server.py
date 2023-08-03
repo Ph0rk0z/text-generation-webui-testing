@@ -75,7 +75,7 @@ def load_model_wrapper(selected_model, loader, autoload=False):
             exc = traceback.format_exc()
             logger.error('Failed to load the model.')
             print(exc)
-            yield exc
+            yield exc.replace('\n', '\n\n')
 
 
 def load_lora_wrapper(selected_loras):
@@ -159,7 +159,7 @@ def download_model_wrapper(repo_id, progress=gr.Progress()):
             yield ("Done!")
     except:
         progress(1.0)
-        yield traceback.format_exc()
+        yield traceback.format_exc().replace('\n', '\n\n')
 
 
 def create_model_menus():
@@ -773,7 +773,7 @@ def create_interface():
 
                         with gr.Row():
                             shared.gradio['Generate'] = gr.Button('Generate', variant='primary', elem_classes="small-button")
-                            shared.gradio['Stop'] = gr.Button('Stop', elem_classes="small-button")
+                            shared.gradio['Stop'] = gr.Button('Stop', elem_classes="small-button", elem_id='stop')
                             shared.gradio['Undo'] = gr.Button('Undo', elem_classes="small-button")
                             shared.gradio['Regenerate'] = gr.Button('Regenerate', elem_classes="small-button")
 
@@ -804,7 +804,7 @@ def create_interface():
                         shared.gradio['max_new_tokens'] = gr.Slider(minimum=shared.settings['max_new_tokens_min'], maximum=shared.settings['max_new_tokens_max'], step=1, label='max_new_tokens', value=shared.settings['max_new_tokens'])
                         with gr.Row():
                             shared.gradio['Generate'] = gr.Button('Generate', variant='primary')
-                            shared.gradio['Stop'] = gr.Button('Stop')
+                            shared.gradio['Stop'] = gr.Button('Stop', elem_id='stop')
                             shared.gradio['Continue'] = gr.Button('Continue')
                             shared.gradio['count_tokens'] = gr.Button('Count tokens')
 

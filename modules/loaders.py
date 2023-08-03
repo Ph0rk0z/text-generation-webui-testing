@@ -55,6 +55,7 @@ loaders_and_params = {
         'llama_cpp_seed',
         'compress_pos_emb',
         'alpha_value',
+        'cpu',
     ],
     'llamacpp_HF': [
         'n_ctx',
@@ -69,6 +70,7 @@ loaders_and_params = {
         'llama_cpp_seed',
         'compress_pos_emb',
         'alpha_value',
+        'cpu',
         'llamacpp_HF_info',
     ],
     'Transformers': [
