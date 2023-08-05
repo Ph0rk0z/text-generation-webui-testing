@@ -33,6 +33,7 @@ theme = gr.themes.Default(
 
 def list_model_elements():
     elements = [
+        'loader',
         'cpu_memory',
         'auto_devices',
         'disk',
