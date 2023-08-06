@@ -21,6 +21,15 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+8/6/23
+```
+Fixed big model settings saving bug. Flash attention 2 for exllama. Works with LoRA.
+Added ability to disable fused attention for regular exllama as well so you can load
+LoRA there. Generally you want to pick fused or flash but not both.
+
+Make sure to install it from it's repo or pip. 
+```
+
 7/31/23
 ```
 Flexgen is removed. If you need it d/l the backup and use that.
