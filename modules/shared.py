@@ -112,9 +112,11 @@ parser.add_argument('--load-in-8bit', action='store_true', help='Load the model 
 parser.add_argument('--threshold', type=float, default=1.5, help='8 bit threshold for older cards')
 parser.add_argument('--bf16', action='store_true', help='Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.')
 parser.add_argument('--no-cache', action='store_true', help='Set use_cache to False while generating text. This reduces the VRAM usage a bit at a performance cost.')
+
+# Attention
 parser.add_argument('--xformers', action='store_true', help="Use xformer's memory efficient attention. This should increase your tokens/s.")
 parser.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
-parser.add_argument('--flash-attention', action='store_true', help="Use HazyResearch's Flash Attention. This drastically reduces VRAM cost")
+parser.add_argument('--flash-attention', action='store_true', help="Use Flash Attention 2. Compute 7.0 and up Required")
 parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon.")
 
 # Accelerate 4-bit
