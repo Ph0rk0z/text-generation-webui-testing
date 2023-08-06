@@ -183,7 +183,7 @@ def sdp_attention_forward(
 # Implementation graciously copied from https://github.com/LAION-AI/Open-Assistant/blob/main/model/model_training/models/patching_llama.py
 # and ported to work with HuggingFace Transformers
 def compute_flash_attention(q, k, v, attention_mask=None, head_mask=None):
-    from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
+    from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func
     
     # q, k, v: [bs, seq_len, num_attention_heads, attn_head_size]
     # attention_mask (float): [bs, seq_len]
@@ -195,7 +195,7 @@ def compute_flash_attention(q, k, v, attention_mask=None, head_mask=None):
     cu_seqlens, max_seqlen = None, None
 
     if attention_mask is None:
-        return flash_attn_unpadded_qkvpacked_func(
+        return flash_attn_varlen_qkvpacked_func(
             qkv,
             dropout_p=0.0,
             cu_seqlens=cu_seqlens,
@@ -217,7 +217,7 @@ def compute_flash_attention(q, k, v, attention_mask=None, head_mask=None):
         cu_seqlens = torch.cat([zero, seqlens.cumsum(dim=0)], dim=0).to(torch.int32)
         max_seqlen = seqlens.max().item()
 
-        out = flash_attn_unpadded_qkvpacked_func(
+        out = flash_attn_varlen_qkvpacked_func(
             qkv,
             dropout_p=0.0,
             cu_seqlens=cu_seqlens,
