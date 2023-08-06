@@ -254,7 +254,7 @@ def create_model_menus():
                         shared.gradio['attention_info'] = gr.Markdown('Hijack Attention via:')
                         shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
                         shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Torch 2.0 SDP attention')
-                        shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention. Compute 7.0 and up.')
+                        shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention 2. Compute 7.0 and up.')
 
                         # Low End                        
                         shared.gradio['no_cache'] = gr.Checkbox(label="no_cache", value=shared.args.no_cache, info='Disable generation cache for less memory but slower speed.')
