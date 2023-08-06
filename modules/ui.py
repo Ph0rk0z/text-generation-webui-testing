@@ -59,6 +59,7 @@ def list_model_elements():
         'threshold',
         'triton',
         'autogptq_act_order',
+        'disable_exllama',
         'fused_mlp',
         'quant_attn',
         'threads',

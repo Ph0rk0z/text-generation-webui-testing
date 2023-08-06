@@ -23,6 +23,7 @@ loaders_and_params = {
         'flash_attention',
         'xformers',
         'sdp_attention',
+        'disable_exllama',
         'no_cache',
     ],
     'GPTQ-for-LLaMa': [

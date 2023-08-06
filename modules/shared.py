@@ -159,6 +159,7 @@ parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
 parser.add_argument('--triton', action='store_true', help='Enable Triton for AutoGPTQ.')
 parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
+parser.add_argument('--disable_exllama', action='store_true', help='Disable exllama kernel in AutoGPTQ. Important for older cards.')
 #parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
 
 # ExLlama

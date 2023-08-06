@@ -139,7 +139,8 @@ def load_quantized(model_name):
                                                    inject_fused_attention=shared.args.quant_attn,
                                                    inject_fused_mlp=shared.args.fused_mlp,
                                                    use_cuda_fp16=False,
-                                                   warmup_triton=shared.args.warmup_autotune)
+                                                   warmup_triton=shared.args.warmup_autotune,
+                                                   disable_exllama=shared.args.disable_exllama)
     except ValueError:
         logger.error('Could not load model.')
         raise Exception('Could not load model. ')
