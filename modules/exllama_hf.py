@@ -113,6 +113,7 @@ class ExllamaHF(PreTrainedModel):
         
         config.fused_attn = shared.args.quant_attn
         config.fused_mlp_thd = 0 if not shared.args.fused_mlp else 2
+        config.use_flash_attn_2 = shared.args.flash_attention
 
         if (shared.args.nohalf2 or torch.version.hip):
             config.rmsnorm_no_half2 = True

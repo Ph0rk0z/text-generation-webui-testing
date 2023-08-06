@@ -53,6 +53,8 @@ class ExllamaModel:
         config.fused_mlp_thd = 2
         config.sdp_thd = 8
         config.matmul_fused_remap = False
+        config.fused_attn = shared.args.quant_att
+        config.use_flash_attn_2 = shared.args.flash_attention
 
         if (shared.args.nohalf2 or torch_version.hip):
             config.rmsnorm_no_half2 = True
