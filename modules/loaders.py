@@ -98,6 +98,8 @@ loaders_and_params = {
     'ExLlama': [
         'gpu_split',
         'nohalf2',
+        'flash_attention',
+        'quant_attn',
         'max_seq_len',
         'compress_pos_emb',
         'alpha_value',
@@ -106,6 +108,7 @@ loaders_and_params = {
     'ExLlama_HF': [
         'gpu_split',
         'nohalf2',
+        'flash_attention',
         'quant_attn',
         'fused_mlp',
         'max_seq_len',
