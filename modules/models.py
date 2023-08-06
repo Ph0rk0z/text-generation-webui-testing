@@ -86,7 +86,7 @@ def load_model(model_name, loader=None):
             tokenizer = load_tokenizer(model_name, model)
 
     # Hijack attention with xformers
-    if any((shared.args.xformers, shared.args.sdp_attention, shared.args.flash_attention) and shared.args.loader not in ['ExLlama', 'ExLlama_HF', 'llama.cpp', 'llamacpp_HF']):
+    if any((shared.args.xformers, shared.args.sdp_attention, shared.args.flash_attention)) and shared.args.loader not in ['ExLlama', 'ExLlama_HF', 'llama.cpp', 'llamacpp_HF']:
         llama_attn_hijack.hijack_llama_attention()
 
     logger.info(f"Loaded the model in {(time.time()-t0):.2f} seconds.\n")
