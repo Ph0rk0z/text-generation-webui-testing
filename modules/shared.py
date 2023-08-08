@@ -6,34 +6,29 @@ import yaml
 
 from modules.logging_colors import logger
 
-generation_lock = None
+
+# Model variables
 model = None
 tokenizer = None
-is_seq2seq = False
 model_name = "None"
-lora_names = []
+is_seq2seq = False
 model_dirty_from_training = False
+lora_names = []
 
-# Chat variables
+# Generation variables
 stop_everything = False
+generation_lock = None
 processing_message = '*Is typing...*'
+input_params = []
+reload_inputs = []
 
-# UI elements (buttons, sliders, HTML, etc)
+# UI variables
 gradio = {}
-
-# For keeping the values of UI elements on page reload
 persistent_interface_state = {}
-
-input_params = []  # Generation input parameters
-reload_inputs = []  # Parameters for reloading the chat interface
-
-# For restarting the interface
 need_restart = False
-
-# To prevent the persistent chat history from being loaded when
-# a session JSON file is being loaded in chat mode
 session_is_loading = False
 
+# UI defaults
 settings = {
     'dark_theme': True,
     'autoload_model': False,
@@ -223,6 +218,9 @@ if args.multi_user:
 
 
 def fix_loader_name(name):
+    if not name:
+        return name
+
     name = name.lower()
     if name in ['llamacpp', 'llama.cpp', 'llama-cpp', 'llama cpp']:
         return 'llama.cpp'
@@ -240,24 +238,11 @@ def fix_loader_name(name):
         return 'ExLlama_HF'
 
 
-if args.loader is not None:
-    args.loader = fix_loader_name(args.loader)
-
-
 def add_extension(name):
     if args.extensions is None:
         args.extensions = [name]
     elif 'api' not in args.extensions:
         args.extensions.append(name)
-
-
-# Activating the API extension
-if args.api or args.public_api:
-    add_extension('api')
-
-# Activating the multimodal extension
-if args.multimodal_pipeline is not None:
-    add_extension('multimodal')
 
 
 def is_chat():
@@ -273,14 +258,24 @@ def get_mode():
         return 'default'
 
 
-# Loading model-specific settings
+args.loader = fix_loader_name(args.loader)
+
+# Activate the API extension
+if args.api or args.public_api:
+    add_extension('api')
+
+# Activate the multimodal extension
+if args.multimodal_pipeline is not None:
+    add_extension('multimodal')
+
+# Load model-specific settings
 with Path(f'{args.model_dir}/config.yaml') as p:
     if p.exists():
         model_config = yaml.safe_load(open(p, 'r').read())
     else:
         model_config = {}
 
-# Applying user-defined model settings
+# Load custom model-specific settings
 with Path(f'{args.model_dir}/config-user.yaml') as p:
     if p.exists():
         user_config = yaml.safe_load(open(p, 'r').read())

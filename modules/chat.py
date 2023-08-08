@@ -3,7 +3,6 @@ import copy
 import functools
 import json
 import re
-from datetime import datetime
 from pathlib import Path
 
 import gradio as gr
@@ -476,7 +475,7 @@ def load_character(character, name1, name2, instruct=False):
         Path("cache/pfp_character.png").unlink()
 
     if character not in ['None', '', None]:
-        folder = 'characters' if not instruct else 'characters/instruction-following'
+        folder = 'characters' if not instruct else 'instruction-templates'
         picture = generate_pfp_cache(character)
         filepath = None
         for extension in ["yml", "yaml", "json"]:
@@ -511,8 +510,6 @@ def load_character(character, name1, name2, instruct=False):
             context = build_pygmalion_style_context(data)
             greeting_field = 'char_greeting'
 
-        if 'example_dialogue' in data:
-            context += f"{data['example_dialogue'].strip()}\n"
         if greeting_field in data:
             greeting = data[greeting_field]
 
@@ -572,6 +569,9 @@ def build_pygmalion_style_context(data):
 
     if 'world_scenario' in data and data['world_scenario'] != '':
         context += f"Scenario: {data['world_scenario']}\n"
+
+    if 'example_dialogue' in data and data['example_dialogue'] != '':
+        context += f"{data['example_dialogue'].strip()}\n"
 
     context = f"{context.strip()}\n"
     return context
