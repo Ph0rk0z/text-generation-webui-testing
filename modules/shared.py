@@ -6,34 +6,29 @@ import yaml
 
 from modules.logging_colors import logger
 
-generation_lock = None
+
+# Model variables
 model = None
 tokenizer = None
-is_seq2seq = False
 model_name = "None"
-lora_names = []
+is_seq2seq = False
 model_dirty_from_training = False
+lora_names = []
 
-# Chat variables
+# Generation variables
 stop_everything = False
+generation_lock = None
 processing_message = '*Is typing...*'
+input_params = []
+reload_inputs = []
 
-# UI elements (buttons, sliders, HTML, etc)
+# UI variables
 gradio = {}
-
-# For keeping the values of UI elements on page reload
 persistent_interface_state = {}
-
-input_params = []  # Generation input parameters
-reload_inputs = []  # Parameters for reloading the chat interface
-
-# For restarting the interface
 need_restart = False
-
-# To prevent the persistent chat history from being loaded when
-# a session JSON file is being loaded in chat mode
 session_is_loading = False
 
+# UI defaults
 settings = {
     'dark_theme': True,
     'autoload_model': False,
@@ -152,7 +147,7 @@ parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Ena
 parser.add_argument('--autograd', action='store_true', default=False, help='Use the autograd GPTQ loader for llama and llama lora')
 parser.add_argument('--v1', action='store_true', default=False, help='Explicity declare GPTQv1 Model to Autograd')
 
-#AutoGPTQ
+# AutoGPTQ
 parser.add_argument('--quant_attn', action='store_true', help='(triton/ cuda-autogptq) or Autograd Enable quant attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='AutoGPTQ(triton) Autograd Enable fused mlp.')
 parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
@@ -179,7 +174,7 @@ parser.add_argument('--rwkv-cuda-on', action='store_true', help='RWKV: Compile t
 
 # RoPE
 parser.add_argument('--compress_pos_emb', type=int, default=1, help="Positional embeddings compression factor. Should typically be set to max_seq_len / 2048.")
-parser.add_argument('--alpha_value', type=int, default=1, help="Positional embeddings alpha factor for NTK RoPE scaling. Scaling is not identical to embedding compression. Use either this or compress_pos_emb, not both.")
+parser.add_argument('--alpha_value', type=int, default=1, help="Positional embeddings alpha factor for NTK RoPE scaling. Use either this or compress_pos_emb, not both.")
 
 # Gradio
 parser.add_argument('--listen', action='store_true', help='Make the web UI reachable from your local network.')
@@ -198,6 +193,7 @@ parser.add_argument('--api', action='store_true', help='Enable the API extension
 parser.add_argument('--api-blocking-port', type=int, default=5000, help='The listening port for the blocking API.')
 parser.add_argument('--api-streaming-port', type=int, default=5005, help='The listening port for the streaming API.')
 parser.add_argument('--public-api', action='store_true', help='Create a public URL for the API using Cloudfare.')
+parser.add_argument('--public-api-id', type=str, help='Tunnel ID for named Cloudflare Tunnel. Use together with public-api option.', default=None)
 
 # Multimodal
 parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The multimodal pipeline to use. Examples: llava-7b, llava-13b.')
@@ -223,6 +219,9 @@ if args.multi_user:
 
 
 def fix_loader_name(name):
+    if not name:
+        return name
+
     name = name.lower()
     if name in ['llamacpp', 'llama.cpp', 'llama-cpp', 'llama cpp']:
         return 'llama.cpp'
@@ -240,24 +239,11 @@ def fix_loader_name(name):
         return 'ExLlama_HF'
 
 
-if args.loader is not None:
-    args.loader = fix_loader_name(args.loader)
-
-
 def add_extension(name):
     if args.extensions is None:
         args.extensions = [name]
     elif 'api' not in args.extensions:
         args.extensions.append(name)
-
-
-# Activating the API extension
-if args.api or args.public_api:
-    add_extension('api')
-
-# Activating the multimodal extension
-if args.multimodal_pipeline is not None:
-    add_extension('multimodal')
 
 
 def is_chat():
@@ -273,14 +259,24 @@ def get_mode():
         return 'default'
 
 
-# Loading model-specific settings
+args.loader = fix_loader_name(args.loader)
+
+# Activate the API extension
+if args.api or args.public_api:
+    add_extension('api')
+
+# Activate the multimodal extension
+if args.multimodal_pipeline is not None:
+    add_extension('multimodal')
+
+# Load model-specific settings
 with Path(f'{args.model_dir}/config.yaml') as p:
     if p.exists():
         model_config = yaml.safe_load(open(p, 'r').read())
     else:
         model_config = {}
 
-# Applying user-defined model settings
+# Load custom model-specific settings
 with Path(f'{args.model_dir}/config-user.yaml') as p:
     if p.exists():
         user_config = yaml.safe_load(open(p, 'r').read())
