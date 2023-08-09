@@ -17,14 +17,15 @@ loaders_and_params = {
         'cpu_memory',
         'cpu',
         'disk',
-        'trust_remote_code',
-        'autogptq_info',
+        'trust_remote_code',      
         'attention_info',
         'flash_attention',
         'xformers',
         'sdp_attention',
         'disable_exllama',
         'no_cache',
+        'autogptq_info',
+
     ],
     'GPTQ-for-LLaMa': [
         'wbits',
@@ -36,12 +37,13 @@ loaders_and_params = {
         'quant_attn',
         'fused_mlp',
         'warmup_autotune',
-        'gptq_for_llama_info',
         'attention_info',
         'flash_attention',
         'xformers',
         'sdp_attention',
         'no_cache',
+        'gptq_for_llama_info'
+
     ],
     'llama.cpp': [
         'n_ctx',
@@ -54,8 +56,8 @@ loaders_and_params = {
         'low_vram',
         'mlock',
         'llama_cpp_seed',
-        'compress_pos_emb',
         'alpha_value',
+        'compress_pos_emb',
         'cpu',
     ],
     'llamacpp_HF': [
@@ -69,8 +71,8 @@ loaders_and_params = {
         'low_vram',
         'mlock',
         'llama_cpp_seed',
-        'compress_pos_emb',
         'alpha_value',
+        'compress_pos_emb',
         'cpu',
         'llamacpp_HF_info',
     ],
@@ -89,12 +91,14 @@ loaders_and_params = {
         'quant_type',
         'compute_dtype',
         'trust_remote_code',
-        'transformers_info',
         'attention_info',
         'flash_attention',
         'xformers',
         'sdp_attention',
         'no_cache',
+        'alpha_value',
+        'compress_pos_emb',
+        'transformers_info'
     ],
     'ExLlama': [
         'gpu_split',
@@ -102,8 +106,8 @@ loaders_and_params = {
         'flash_attention',
         'quant_attn',
         'max_seq_len',
-        'compress_pos_emb',
         'alpha_value',
+        'compress_pos_emb',
         'exllama_info',
     ],
     'ExLlama_HF': [
@@ -113,8 +117,8 @@ loaders_and_params = {
         'quant_attn',
         'fused_mlp',
         'max_seq_len',
-        'compress_pos_emb',
         'alpha_value',
+        'compress_pos_emb',
         'exllama_HF_info',
     ]
 }
