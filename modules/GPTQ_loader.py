@@ -18,7 +18,7 @@ from modules.logging_colors import logger
 
 
 
-from gptq_llama import llama_inference_offload
+#from gptq_llama import llama_inference_offload
 #import llama_inference_offload 
 #from offload import load_quant_offload
 
@@ -225,6 +225,63 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
     
     return model
 
+def offload_quant(model, checkpoint, wbits, groupsize, pre_layer):
+    from gptq_llama import llama_inference_offload
+    from transformers.models.llama.modeling_llama import LlamaForCausalLM, LlamaConfig
+    transformers.models.llama.modeling_llama.LlamaModel = llama_inference_offload.Offload_LlamaModel
+
+    rope = {}
+    if shared.args.compress_pos_emb > 1:
+        rope['rope_scaling'] = {'type': 'linear', 'factor': shared.args.compress_pos_emb}
+    elif shared.args.alpha_value > 1:
+        rope['rope_scaling'] = {'type': 'dynamic', 'factor': shared.args.alpha_value}
+    
+    config = LlamaConfig.from_pretrained(model, trust_remote_code=shared.args.trust_remote_code, **rope )
+    def noop(*args, **kwargs):
+        pass
+    torch.nn.init.kaiming_uniform_ = noop 
+    torch.nn.init.uniform_ = noop 
+    torch.nn.init.normal_ = noop 
+
+    torch.set_default_dtype(torch.half)
+    transformers.modeling_utils._init_weights = False
+    torch.set_default_dtype(torch.half)
+    model = LlamaForCausalLM (config)
+    torch.set_default_dtype(torch.float)
+    model = model.eval()
+    layers = find_layers(model)
+    for name in ['lm_head']:
+        if name in layers:
+            del layers[name]
+    make_quant(model, layers, wbits, groupsize)
+
+    print('Loading model ...')
+    if checkpoint.endswith('.safetensors'):
+        from safetensors.torch import load_file as safe_load
+        model.load_state_dict(safe_load(checkpoint), strict=False)
+    else:
+        model.load_state_dict(torch.load(checkpoint), strict=False)
+    
+    
+    if (isinstance(pre_layer, int)):
+        pre_layer = [pre_layer]
+    last_layer = 0
+    for index, dev_layer in enumerate(pre_layer):
+        target = torch.device(f'cuda:{index}')
+        for i in range(last_layer, dev_layer):
+            model.model.layers[i].to(target)
+            model.model.layers[i].target_device = target
+        last_layer = dev_layer
+    for i in range(last_layer, len(model.model.layers)):
+        model.model.layers[i].target_device = torch.device('cpu')
+    model.model.embed_tokens.to(torch.device('cuda:0'))
+    model.model.norm.to(torch.device('cuda:0'))
+    model.lm_head.to(torch.device('cuda:0'))
+    model.model.preload = last_layer
+    print('Done.')
+    return model
+
+
 
 # Used to locate the .pt/.safetensors quantized file
 def find_quantized_model_file(model_name):
@@ -270,7 +327,7 @@ def load_quantized(model_name):
     # Select the appropriate load_quant function
     model_type = shared.args.model_type.lower()
     if shared.args.pre_layer and model_type == 'llama':
-        load_quant = llama_inference_offload.load_quant
+        load_quant = offload_quant
     elif model_type in ('llama', 'opt', 'gptneox', 'gptj'):
         if shared.args.pre_layer:
             logger.warning("Ignoring --pre_layer because it only works for llama model type.")

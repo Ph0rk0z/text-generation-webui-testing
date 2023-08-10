@@ -89,7 +89,7 @@ def create_ui():
                         shared.gradio['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128, 1024], value=str(shared.args.groupsize) if shared.args.groupsize > 0 else "None")
                         shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None", "llama", "opt", "gptj", "gptneox"], value=shared.args.model_type or "None")
 
-                        shared.gradio['pre_layer'] = gr.Slider(label="pre_layer", minimum=0, maximum=100, value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0)
+                        shared.gradio['pre_layer'] = gr.Textbox(label="pre_layer", value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0, info='Llama only: Pre layer. For multi-gpu, write the numbers separated by spaces, ie: 30 60 More layers than the model will cause error')
                         shared.gradio['autogptq_info'] = gr.Markdown('* ExLlama_HF is recommended over AutoGPTQ for models derived from LLaMA.')
                         shared.gradio['gpu_split'] = gr.Textbox(label='gpu-split', info='Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7')
                         shared.gradio['max_seq_len'] = gr.Slider(label='max_seq_len', minimum=0, maximum=32768, step=256, info='Maximum sequence length.', value=shared.args.max_seq_len)
