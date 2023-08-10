@@ -63,9 +63,16 @@ def load_autograd (config_path, model_path):
     print(Style.BRIGHT + Fore.CYAN + "Autograd Loading Model ...")
     t0 = time.time()
 
+    rope = {}
+    if shared.args.compress_pos_emb > 1:
+        rope['rope_scaling'] = {'type': 'linear', 'factor': shared.args.compress_pos_emb}
+    elif shared.args.alpha_value > 1:
+        rope['rope_scaling'] = {'type': 'dynamic', 'factor': shared.args.alpha_value}
+
+
     with accelerate.init_empty_weights():
-        config = AutoConfig.from_pretrained(config_path)
-        model = AutoModelForCausalLM.from_config(config)
+        config = AutoConfig.from_pretrained(config_path, trust_remote_code=shared.args.trust_remote_code, **rope)
+        model = AutoModelForCausalLM.from_config(config, trust_remote_code=shared.args.trust_remote_code)
         model = model.eval()
         layers = find_layers(model)
         for name in ['lm_head', 'embed_out']:
@@ -128,7 +135,7 @@ def finalize_autograd (model):
        if (shared.args.quant_attn): 
            from model_attn_mlp_patch import make_quant_attn
            make_quant_attn(model, is_v1_model=shared.args.v1)
-           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: quant_attn')
+           print(Style.BRIGHT + Fore.YELLOW + 'Autograd: quant_attn (May fail on newer cards with RoPE)')
        if (shared.args.fused_mlp):
            from model_attn_mlp_patch import make_fused_mlp
            make_fused_mlp(model, is_v1_model=shared.args.v1)
@@ -149,7 +156,13 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
     def noop(*args, **kwargs):
         pass
 
-    config = AutoConfig.from_pretrained(model, trust_remote_code=shared.args.trust_remote_code)
+    rope = {}
+    if shared.args.compress_pos_emb > 1:
+        rope['rope_scaling'] = {'type': 'linear', 'factor': shared.args.compress_pos_emb}
+    elif shared.args.alpha_value > 1:
+        rope['rope_scaling'] = {'type': 'dynamic', 'factor': shared.args.alpha_value}
+
+    config = AutoConfig.from_pretrained(model, trust_remote_code=shared.args.trust_remote_code, **rope)
     torch.nn.init.kaiming_uniform_ = noop
     torch.nn.init.uniform_ = noop
     torch.nn.init.normal_ = noop
@@ -208,7 +221,7 @@ def _load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exc
             if eval and shared.args.fused_mlp:
                 quant.autotune_warmup_fused(model)
 
-    model.seqlen = 2048
+    #model.seqlen = 2048
     
     return model
 

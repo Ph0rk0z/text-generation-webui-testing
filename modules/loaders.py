@@ -42,6 +42,8 @@ loaders_and_params = {
         'xformers',
         'sdp_attention',
         'no_cache',
+        'alpha_value',
+        'compress_pos_emb',
         'gptq_for_llama_info'
 
     ],

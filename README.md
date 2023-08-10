@@ -21,6 +21,15 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+8/10/23
+```
+Add scaled ROPE to GPTQ classic. Requires you install git transformers.
+Doesn't work with fused attention (FP16 cards) for autograd or with llama offloading yet.
+AutoGPTQ will work when it exposes the option. Previous option was to edit
+config files which is not great for alpha.
+
+```
+
 8/6/23
 ```
 Fixed big model settings saving bug. Flash attention 2 for exllama. Works with LoRA.
