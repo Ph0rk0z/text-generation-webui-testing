@@ -357,10 +357,11 @@ def load_quantized(model_name):
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:
-        if len(shared.args.pre_layer) == 1:
-            pre_layer = shared.args.pre_layer[0]
-        else:
-            pre_layer = shared.args.pre_layer
+        pre_layer_str = shared.args.pre_layer
+        pre_layer_list = pre_layer_str.split()
+        pre_layer = [int(x) for x in pre_layer_list]
+        if len(pre_layer) == 1:
+           pre_layer = pre_layer[0]
 
         model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, pre_layer)        
 
