@@ -168,7 +168,7 @@ python server.py --model llama-30b-4bit-128g --chat --autograd --groupsize 128  
 ## Features
 
 * 3 interface modes: default, notebook, and chat
-* Multiple model backends: transformers, llama.cpp, ExLlama, AutoGPTQ, GPTQ-for-LLaMa
+* Multiple model backends: [transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [ExLlama](https://github.com/turboderp/exllama), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [ctransformers](https://github.com/marella/ctransformers)
 * Dropdown menu for quickly switching between different models
 * LoRA: load and unload LoRAs on the fly, train a new LoRA
 * Precise instruction templates for chat mode, including Llama 2, Alpaca, Vicuna, WizardLM, StableLM, and many others
@@ -354,8 +354,6 @@ Optionally, you can use the following command-line flags:
 | Flag                                       | Description |
 |--------------------------------------------|-------------|
 | `-h`, `--help`                             | Show this help message and exit. |
-| `--notebook`                               | Launch the web UI in notebook mode, where the output is written to the same text box as the input. |
-| `--chat`                                   | Launch the web UI in chat mode. |
 | `--multi-user`                             | Multi-user mode. Chat histories are not saved or automatically loaded. WARNING: this is highly experimental. |
 | `--character CHARACTER`                    | The name of the character to load in chat mode by default. |
 | `--model MODEL`                            | Name of the model to load by default. |

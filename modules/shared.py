@@ -19,8 +19,6 @@ lora_names = []
 stop_everything = False
 generation_lock = None
 processing_message = '*Is typing...*'
-input_params = []
-reload_inputs = []
 
 # UI variables
 gradio = {}
@@ -45,7 +43,6 @@ settings = {
     'greeting': '',
     'turn_template': '',
     'custom_stopping_strings': '',
-    'stop_at_newline': False,
     'add_bos_token': True,
     'ban_eos_token': False,
     'skip_special_tokens': True,
@@ -57,11 +54,7 @@ settings = {
     'chat_style': 'TheEncrypted777',
     'instruction_template': 'None',
     'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
-    'chat_generation_attempts': 1,
-    'chat_generation_attempts_min': 1,
-    'chat_generation_attempts_max': 10,
-    'default_extensions': [],
-    'chat_default_extensions': ['gallery'],
+    'default_extensions': ['gallery'],
     'preset': 'simple-1',
     'prompt': 'QA',
 }
@@ -81,8 +74,8 @@ def str2bool(v):
 parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=54))
 
 # Basic settings
-parser.add_argument('--notebook', action='store_true', help='Launch the web UI in notebook mode, where the output is written to the same text box as the input.')
-parser.add_argument('--chat', action='store_true', help='Launch the web UI in chat mode with a style similar to the Character.AI website.')
+parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
+parser.add_argument('--chat', action='store_true', help='DEPRECATED')
 parser.add_argument('--multi-user', action='store_true', help='Multi-user mode. Chat histories are not saved or automatically loaded. WARNING: this is highly experimental.')
 parser.add_argument('--character', type=str, help='The name of the character to load in chat mode by default.')
 parser.add_argument('--model', type=str, help='Name of the model to load by default.')
@@ -114,6 +107,8 @@ parser.add_argument('--xformers', action='store_true', help="Use xformer's memor
 parser.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
 parser.add_argument('--flash-attention', action='store_true', help="Use Flash Attention 2. Compute 7.0 and up Required")
 parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon.")
+parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
+parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
@@ -139,7 +134,7 @@ parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ 
 parser.add_argument('--wbits', type=int, default=0, help='GPTQ: Load a pre-quantized model with specified precision in bits. 2, 3, 4 and 8 are supported.')
 parser.add_argument('--model_type', type=str, help='GPTQ: Model type of pre-quantized model. Currently LLaMA, OPT, GPT-NeoX and GPT-J are supported.')
 parser.add_argument('--groupsize', type=int, default=-1, help='GPTQ: Group size.')
-parser.add_argument('--pre_layer', type=str, help='The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models. For multi-gpu, write the numbers separated by spaces, eg --pre_layer 30 60.')
+parser.add_argument('--pre_layer', type=int, nargs="+", help='The number of layers to allocate to the GPU. Setting this parameter enables CPU offloading for 4-bit models. For multi-gpu, write the numbers separated by spaces, eg --pre_layer 30 60.')
 parser.add_argument('--checkpoint', type=str, help='The path to the quantized checkpoint file. If not specified, it will be automatically detected.')
 parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Enable warmup autotune.')
 
@@ -148,8 +143,6 @@ parser.add_argument('--autograd', action='store_true', default=False, help='Use 
 parser.add_argument('--v1', action='store_true', default=False, help='Explicity declare GPTQv1 Model to Autograd')
 
 # AutoGPTQ
-parser.add_argument('--quant_attn', action='store_true', help='(triton/ cuda-autogptq) or Autograd Enable quant attention.')
-parser.add_argument('--fused_mlp', action='store_true', help='AutoGPTQ(triton) Autograd Enable fused mlp.')
 parser.add_argument('--autogptq', action='store_true', help='Enable AutoGPTQ.')
 parser.add_argument('--triton', action='store_true', help='Enable Triton for AutoGPTQ.')
 parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
@@ -209,6 +202,11 @@ if args.gptq_for_llama or args.autograd:
 if args.exllama:
     args.loader = 'ExLlama'
 
+# Deprecation warnings
+for k in ['chat', 'notebook']:
+    if getattr(args, k):
+        logger.warning(f'--{k} has been deprecated and will be removed soon. Please remove that flag.')
+
 # Security warnings
 if args.trust_remote_code:
     logger.warning("trust_remote_code is enabled. This is dangerous.")
@@ -237,6 +235,8 @@ def fix_loader_name(name):
         return 'ExLlama'
     elif name in ['exllama-hf', 'exllama_hf', 'exllama hf', 'ex-llama-hf', 'ex_llama_hf']:
         return 'ExLlama_HF'
+    elif name in ['ctransformers', 'ctranforemrs', 'ctransformer']:
+        return 'ctransformers'
 
 
 def add_extension(name):
@@ -247,16 +247,7 @@ def add_extension(name):
 
 
 def is_chat():
-    return args.chat
-
-
-def get_mode():
-    if args.chat:
-        return 'chat'
-    elif args.notebook:
-        return 'notebook'
-    else:
-        return 'default'
+    return True
 
 
 args.loader = fix_loader_name(args.loader)
