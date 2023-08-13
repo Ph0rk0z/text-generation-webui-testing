@@ -30,7 +30,7 @@ def autograd_add_wrapper(lora_names):
 
     # Add Autograd Lora
     elif len(lora_names) >= 1:
-       lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+       lora_path = get_lora_path(lora_names[0])
        if (shared.args.quant_attn) or (shared.args.fused_mlp):
            autograd_inject(lora_path)
        else:
@@ -86,6 +86,12 @@ def autograd_inject (lora_path):
     print(Style.BRIGHT + Fore.YELLOW + 'Autograd Inject Lora', lora_path)
 
 
+def get_lora_path(lora_name):
+    p = Path(lora_name)
+    if p.exists():
+        lora_name = p.parts[-1]
+
+    return Path(f"{shared.args.lora_dir}/{lora_name}")
 
 
 def add_lora_exllama(lora_names):
@@ -112,7 +118,7 @@ def add_lora_exllama(lora_names):
         if len(lora_names) > 1:
             logger.warning('ExLlama can only work with 1 LoRA at the moment. Only the first one in the list will be loaded.')
 
-        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+        lora_path = get_lora_path(lora_names[0])
         lora_config_path = lora_path / "adapter_config.json"
         lora_adapter_path = lora_path / "adapter_model.bin"
 
@@ -154,7 +160,7 @@ def add_lora_autogptq(lora_names):
             inference_mode=True,
         )
 
-        lora_path = Path(f"{shared.args.lora_dir}/{lora_names[0]}")
+        lora_path = get_lora_path(lora_names[0])
         logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join([lora_names[0]])))
         shared.model = get_gptq_peft_model(shared.model, peft_config, lora_path)
         shared.lora_names = [lora_names[0]]
@@ -177,7 +183,7 @@ def add_lora_transformers(lora_names):
     if len(removed_set) == 0 and len(prior_set) > 0:
         logger.info(f"Adding the LoRA(s) named {added_set} to the model...")
         for lora in added_set:
-            shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
+            shared.model.load_adapter(get_lora_path(lora), lora)
 
         return
 
@@ -199,9 +205,9 @@ def add_lora_transformers(lora_names):
                     params['device_map'] = {"base_model.model." + k: v for k, v in shared.model.hf_device_map.items()}
 
         logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join(lora_names)))
-        shared.model = PeftModel.from_pretrained(shared.model, Path(f"{shared.args.lora_dir}/{lora_names[0]}"), adapter_name=lora_names[0], **params)
+        shared.model = PeftModel.from_pretrained(shared.model, get_lora_path(lora_names[0]), adapter_name=lora_names[0], **params)
         for lora in lora_names[1:]:
-            shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
+            shared.model.load_adapter(get_lora_path(lora), lora)
 
         shared.lora_names = lora_names
 

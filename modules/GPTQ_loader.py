@@ -334,7 +334,7 @@ def load_quantized(model_name):
 
         load_quant = _load_quant
     else:
-        logger.error("Unknown pre-quantized model type specified. Only 'llama', 'opt' and 'gptj' are supported")
+        logger.error("Unknown pre-quantized model type specified. Only 'llama', 'opt', 'gptj, and gptneox' are supported")
         exit()
 
     # Find the quantized model weights file (.pt/.safetensors)
@@ -357,9 +357,10 @@ def load_quantized(model_name):
 
     # qwopqwop200's offload 
     elif model_type == 'llama' and shared.args.pre_layer:
-        pre_layer_str = shared.args.pre_layer
-        pre_layer_list = pre_layer_str.split()
-        pre_layer = [int(x) for x in pre_layer_list]
+        if len(shared.args.pre_layer) == 1:
+            pre_layer = shared.args.pre_layer[0]
+        else:
+            pre_layer = shared.args.pre_layer
 
         model = load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, pre_layer)        
 
