@@ -361,7 +361,6 @@ Optionally, you can use the following command-line flags:
 | `--model-dir MODEL_DIR`                    | Path to directory with all the models. |
 | `--lora-dir LORA_DIR`                      | Path to directory with all the loras. |
 | `--model-menu`                             | Show a model menu in the terminal when the web UI is first launched. |
-| `--no-stream`                              | Don't stream the text output in real time. |
 | `--settings SETTINGS_FILE`                 | Load the default interface settings from this yaml file. See `settings-template.yaml` for an example. If you create a file called `settings.yaml`, this file will be loaded by default without the need to use the `--settings` flag. |
 | `--extensions EXTENSIONS [EXTENSIONS ...]` | The list of extensions to load. If you want to load more than one extension, write the names separated by spaces. |
 | `--verbose`                                | Print the prompts to the terminal. |
@@ -388,7 +387,7 @@ Optionally, you can use the following command-line flags:
 | `--no-cache`                                | Set `use_cache` to False while generating text. This reduces the VRAM usage a bit with a performance cost. |
 | `--xformers`                                | Use xformer's memory efficient attention. This should increase your tokens/s. |
 | `--sdp-attention`                           | Use torch 2.0's sdp attention. |
-| `--flash-attention`                         | Use HazyResearch's Flash Attention. This drastically reduces the VRAM cost |
+| `--flash-attention`                         | Use Flash Attention 2. This drastically reduces the VRAM cost |
 | `--trust-remote-code`                       | Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon. |
 
 #### Accelerate 4-bit
@@ -427,7 +426,7 @@ Optionally, you can use the following command-line flags:
 
 | Flag        | Description |
 |-------------|-------------|
-| `--model_type MODEL_TYPE` | Model type of pre-quantized model. Currently gpt2, gptj, gpt_neox, falcon, llama, mpt, gpt_bigcode, dolly-v2, and replit are supported. |
+| `--model_type MODEL_TYPE` | Model type of pre-quantized model. Currently gpt2, gptj, gptneox, falcon, llama, mpt, starcoder (gptbigcode), dollyv2, and replit are supported. |
 
 #### AutoGPTQ
 
@@ -436,7 +435,8 @@ Optionally, you can use the following command-line flags:
 | `--triton`                     | Use triton. |
 | `--quant_attn`  | Ennable the use of fused attention, faster but slightly more vram. |
 | `--fused_mlp`        | Triton mode only: enable the use of fused MLP, which will use lots more vram. |
-| `autogptq_act_order`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
+| `--autogptq_act_order`                   | For models that don't have a quantize_config.json, this parameter is used to define whether to use group size and act_order together  |
+| `--disable_exllama`            | Disable ExLlama kernel, which can improve inference speed on some systems. |
 
 #### ExLlama
 
@@ -457,10 +457,9 @@ Optionally, you can use the following command-line flags:
 | `--checkpoint CHECKPOINT` | The path to the quantized checkpoint file. If not specified, it will be automatically detected. |
 | `--autograd`   | GPTQ: Autograd implementation to use 4bit lora and run multiple models. Will now automatically select loader. |
 | `--v1`   | GPTQ: Explicitly declare a GPTQv1 model to load into autograd. |
-| `---mlp_attn`    | MLP attention hijack. Slightly faster inference. |
-| `--quant_attn`         | (triton) Enable quant attention.
+| `--quant_attn`         | (triton/Autograd) Enable quant attention.
 | `--warmup_autotune`    | (triton) Enable warmup autotune.
-| `--fused_mlp`          | (triton) Enable fused mlp.
+| `--fused_mlp`          | (triton/Autograd) Enable fused mlp.
 | `--autogptq`           | Load with autogptq. Look in shared.py for more options like triton or using act order w/ groupsize kernel
 
 
