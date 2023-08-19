@@ -33,6 +33,7 @@ def create_ui():
                 default_gpu_mem.append(int(re.sub('[a-zA-Z ]', '', i)))
             else:
                 default_gpu_mem.append(int(re.sub('[a-zA-Z ]', '', i)) * 1000)
+
     while len(default_gpu_mem) < len(total_mem):
         default_gpu_mem.append(0)
 
@@ -91,6 +92,7 @@ def create_ui():
                             shared.gradio['cpu'] = gr.Checkbox(label="cpu", value=shared.args.cpu, info='Offload to CPU')
                             shared.gradio['disk'] = gr.Checkbox(label="disk", value=shared.args.disk, info='Offload to Disk')
 
+
                     with gr.Column():
                         # 8 Bit
                         shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
@@ -139,6 +141,8 @@ def create_ui():
                         shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
                         shared.gradio['low_vram'] = gr.Checkbox(label="low-vram", value=shared.args.low_vram)
                         shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
+                        shared.gradio['mul_mat_q'] = gr.Checkbox(label="mul_mat_q", value=shared.args.mul_mat_q)
+                        shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
                         shared.gradio['llama_cpp_seed'] = gr.Number(label='Seed (0 for random)', value=shared.args.llama_cpp_seed)
 
                         # Security
@@ -150,6 +154,7 @@ def create_ui():
                         shared.gradio['exllama_HF_info'] = gr.Markdown('ExLlama_HF is a wrapper that lets you use ExLlama like a Transformers model, which means it can use the Transformers samplers.')
                         shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. It works, but it\'s experimental and slow. Contributions are welcome.\n\nTo use it, make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
                         shared.gradio['autogptq_info'] = gr.Markdown('* ExLlama_HF is recommended over AutoGPTQ for models derived from LLaMA.')
+
 
             with gr.Column():
                 with gr.Row():
