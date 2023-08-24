@@ -21,7 +21,7 @@ from datasets import Dataset, load_dataset
 from peft import (
     LoraConfig,
     get_peft_model,
-    prepare_model_for_int8_training,
+    prepare_model_for_kbit_training,
     set_peft_model_state_dict
 )
 from peft.utils.other import \
@@ -64,7 +64,7 @@ def create_ui():
                         with gr.Column(scale=5):
                             lora_name = gr.Textbox(label='Name', info='The name of your new LoRA file')
                         with gr.Column():
-                            always_override = gr.Checkbox(label='Override Existing Files', value=False, info='If the name is the same, checking will replace the existing file, and unchecking will load and continue from it (the rank must be the same).')
+                            always_override = gr.Checkbox(label='Override Existing Files', value=False, info='If the name is the same, checking will replace the existing file, and unchecking will load and continue from it (the rank must be the same).', elem_classes=['no-background'])
 
                     with gr.Row():
                         with gr.Column():
@@ -307,11 +307,6 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
         yield "LoRA training in 4-bit requires loading with `--autograd`"
         return
 
-    elif not (shared.args.load_in_8bit or shared.args.load_in_4bit) and shared.args.wbits <= 0:
-        yield "It is highly recommended you use `--load-in-8bit` for LoRA training. *(Will continue anyway in 2 seconds, press `Interrupt` to stop.)*"
-        logger.warning("It is highly recommended you use `--load-in-8bit` for LoRA training.")
-        time.sleep(2)  # Give it a moment for the message to show in UI before continuing
-
     if cutoff_len <= 0 or micro_batch_size <= 0 or batch_size <= 0 or actual_lr <= 0 or lora_rank <= 0 or lora_alpha <= 0:
         yield "Cannot input zeroes."
         return
@@ -481,7 +476,7 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
     # == Start prepping the model itself ==
     if not hasattr(shared.model, 'lm_head') or hasattr(shared.model.lm_head, 'weight'):
         logger.info("Getting model ready...")
-        prepare_model_for_int8_training(shared.model)
+        prepare_model_for_kbit_training(shared.model)
 
     # base model is now frozen and should not be reused for any other LoRA training than this one
     shared.model_dirty_from_training = True
