@@ -443,6 +443,7 @@ Optionally, you can use the following command-line flags:
 | `--n_gqa N_GQA`         | grouped-query attention. Must be 8 for llama-2 70b. |
 | `--rms_norm_eps RMS_NORM_EPS`  | 5e-6 is a good value for llama-2 models. |
 | `--cpu`                        | Use the CPU version of llama-cpp-python instead of the GPU-accelerated version. |
+|`--cfg-cache`                         | llamacpp_HF: Create an additional cache for CFG negative prompts. Necessary to use CFG with that loader. |
 
 #### ctransformers
 
@@ -467,6 +468,7 @@ Optionally, you can use the following command-line flags:
 |`--gpu-split`     | Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. `20,7,7` |
 |`--nohalf2`       | Disable half2 so pascal can somewhat use exllama. its still not good  |
 |`--max_seq_len MAX_SEQ_LEN`           | Maximum sequence length. |
+|`--cfg-cache`                         | ExLlama_HF: Create an additional cache for CFG negative prompts. Necessary to use CFG with that loader, but not necessary for CFG with base ExLlama. |
 
 #### GPTQ-for-LLaMa
 
