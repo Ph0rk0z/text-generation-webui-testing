@@ -70,6 +70,7 @@ def list_model_elements():
         'disable_exllama',
         'fused_mlp',
         'quant_attn',
+        'cfg_cache',
         'threads',
         'n_batch',
         'no_mmap',
