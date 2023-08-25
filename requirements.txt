@@ -41,4 +41,4 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 #https://github.com/Ph0rk0z/GPTQ-Merged
 
 # ctransformers
-https://github.com/jllllll/ctransformers-cuBLAS-wheels/releases/download/AVX2/ctransformers-0.2.23+cu117-py3-none-any.whl
+https://github.com/jllllll/ctransformers-cuBLAS-wheels/releases/download/AVX2/ctransformers-0.2.24+cu117-py3-none-any.whl
