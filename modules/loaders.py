@@ -38,7 +38,7 @@ loaders_and_params = OrderedDict({
         'max_seq_len',
         'alpha_value',
         'compress_pos_emb',
-        'exllama_HF_info',
+        'exllama_info',
     ],
     'ExLlama_HF': [
         'gpu_split',
