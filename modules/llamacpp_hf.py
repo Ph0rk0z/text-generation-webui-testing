@@ -38,7 +38,8 @@ class LlamacppHF(PreTrainedModel):
         self.llamacpp_cache = {
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
-            'scores': self.model.scores
+            'scores': self.model.scores,
+            'ctx': self.model.ctx
         }
 
         if shared.args.cfg_cache:
@@ -46,7 +47,8 @@ class LlamacppHF(PreTrainedModel):
             self.llamacpp_cache_negative = {
                 'n_tokens': self.model.n_tokens,
                 'input_ids': self.model.input_ids.copy(),
-                'scores': self.model.scores.copy()
+                'scores': self.model.scores.copy(),
+                'ctx': llama_cpp_lib().llama_new_context_with_model(model.model, model.params)
             }
 
     def _validate_model_class(self):
@@ -62,25 +64,29 @@ class LlamacppHF(PreTrainedModel):
         self.llamacpp_cache.update({
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
-            'scores': self.model.scores
+            'scores': self.model.scores,
+            'ctx': self.model.ctx
         })
 
     def save_negative_cache(self):
         self.llamacpp_cache_negative.update({
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
-            'scores': self.model.scores
+            'scores': self.model.scores,
+            'ctx': self.model.ctx
         })
 
     def load_cache(self):
         self.model.n_tokens = self.llamacpp_cache['n_tokens']
         self.model.input_ids = self.llamacpp_cache['input_ids']
         self.model.scores = self.llamacpp_cache['scores']
+        self.model.ctx = self.llamacpp_cache['ctx']
 
     def load_negative_cache(self):
         self.model.n_tokens = self.llamacpp_cache_negative['n_tokens']
         self.model.input_ids = self.llamacpp_cache_negative['input_ids']
         self.model.scores = self.llamacpp_cache_negative['scores']
+        self.model.ctx = self.llamacpp_cache_negative['ctx']
 
     @property
     def device(self) -> torch.device:
@@ -89,11 +95,11 @@ class LlamacppHF(PreTrainedModel):
     def __call__(self, *args, **kwargs):
         use_cache = kwargs.get('use_cache', True)
         labels = kwargs.get('labels', None)
-        cache = kwargs.get('past_key_values', None)
+        past_key_values = kwargs.get('past_key_values', None)
 
         if len(args) > 0:
             if not shared.args.cfg_cache:
-                logger.error("Please enable the cfg_cache option to use CFG with llamacpp_HF.")
+                logger.error("Please enable the cfg-cache option to use CFG with llamacpp_HF.")
                 return
 
             input_ids = args[0]
@@ -107,10 +113,12 @@ class LlamacppHF(PreTrainedModel):
             self.load_cache()
 
         seq = input_ids[0].tolist()
+        if is_negative and past_key_values is not None:
+            seq = past_key_values + seq
+
         seq_tensor = torch.tensor(seq)
 
         # Make the forward call
-        seq_tensor = torch.tensor(seq)
         if labels is None:
             if past_seq is None or not torch.equal(past_seq, seq_tensor[:-1]):
                 self.model.reset()
@@ -145,7 +153,7 @@ class LlamacppHF(PreTrainedModel):
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
 
-        return CausalLMOutputWithPast(logits=logits, past_key_values=cache if use_cache else None, loss=loss)
+        return CausalLMOutputWithPast(logits=logits, past_key_values=seq if use_cache else None, loss=loss)
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs):
