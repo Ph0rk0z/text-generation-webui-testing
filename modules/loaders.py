@@ -1,83 +1,11 @@
 import functools
+from collections import OrderedDict
 
 import gradio as gr
 
 from modules import shared
 
-loaders_and_params = {
-    'AutoGPTQ': [
-        'triton',
-        'quant_attn',
-        'fused_mlp',
-        'wbits',
-        'groupsize',
-        'warmup_autotune',
-        'autogptq_act_order',
-        'gpu_memory',
-        'cpu_memory',
-        'cpu',
-        'disk',
-        'trust_remote_code',      
-        'attention_info',
-        'flash_attention',
-        'xformers',
-        'sdp_attention',
-        'disable_exllama',
-        'no_cache',
-        'autogptq_info',
-
-    ],
-    'GPTQ-for-LLaMa': [
-        'wbits',
-        'groupsize',
-        'model_type',
-        'pre_layer',
-        'autograd',
-        'v1',
-        'quant_attn',
-        'fused_mlp',
-        'warmup_autotune',
-        'attention_info',
-        'flash_attention',
-        'xformers',
-        'sdp_attention',
-        'no_cache',
-        'alpha_value',
-        'compress_pos_emb',
-        'gptq_for_llama_info'
-
-    ],
-    'llama.cpp': [
-        'n_ctx',
-        'n_gqa',
-        'rms_norm_eps',
-        'n_gpu_layers',
-        'n_batch',
-        'threads',
-        'no_mmap',
-        'low_vram',
-        'mlock',
-        'llama_cpp_seed',
-        'alpha_value',
-        'compress_pos_emb',
-        'cpu',
-    ],
-    'llamacpp_HF': [
-        'n_ctx',
-        'n_gqa',
-        'rms_norm_eps',
-        'n_gpu_layers',
-        'n_batch',
-        'threads',
-        'no_mmap',
-        'low_vram',
-        'mlock',
-        'llama_cpp_seed',
-        'alpha_value',
-        'compress_pos_emb',
-        'cpu',
-        'llamacpp_HF_info',
-    ],
+loaders_and_params = OrderedDict({
     'Transformers': [
         'cpu_memory',
         'gpu_memory',
@@ -99,18 +27,9 @@ loaders_and_params = {
         'sdp_attention',
         'no_cache',
         'alpha_value',
+        'rope_freq_base',
         'compress_pos_emb',
         'transformers_info'
-    ],
-    'ExLlama': [
-        'gpu_split',
-        'nohalf2',
-        'flash_attention',
-        'quant_attn',
-        'max_seq_len',
-        'alpha_value',
-        'compress_pos_emb',
-        'exllama_info',
     ],
     'ExLlama_HF': [
         'gpu_split',
@@ -120,10 +39,110 @@ loaders_and_params = {
         'fused_mlp',
         'max_seq_len',
         'alpha_value',
+        'rope_freq_base',
         'compress_pos_emb',
+        'cfg_cache',
         'exllama_HF_info',
+    ],
+    'ExLlama': [
+        'gpu_split',
+        'nohalf2',
+        'flash_attention',
+        'quant_attn',
+        'max_seq_len',
+        'alpha_value',
+        'rope_freq_base',
+        'compress_pos_emb',
+        'exllama_info',
+    ],
+    'AutoGPTQ': [
+        'triton',
+        'quant_attn',
+        'fused_mlp',
+        'wbits',
+        'groupsize',
+        'warmup_autotune',
+        'autogptq_act_order',
+        'gpu_memory',
+        'cpu_memory',
+        'cpu',
+        'disk',
+        'trust_remote_code',      
+        'attention_info',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
+        'disable_exllama',
+        'no_cache',
+        'autogptq_info',
+    ],
+    'GPTQ-for-LLaMa': [
+        'wbits',
+        'groupsize',
+        'model_type',
+        'pre_layer',
+        'autograd',
+        'v1',
+        'quant_attn',
+        'fused_mlp',
+        'warmup_autotune',
+        'attention_info',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
+        'no_cache',
+        'alpha_value',
+        'compress_pos_emb',
+        'gptq_for_llama_info'
+    ],
+    'llama.cpp': [
+        'n_ctx',
+        'n_gqa',
+        'rms_norm_eps',
+        'n_gpu_layers',
+        'tensor_split',
+        'n_batch',
+        'threads',
+        'no_mmap',
+        'low_vram',
+        'mlock',
+        'mul_mat_q',
+        'llama_cpp_seed',
+        'alpha_value',
+        'rope_freq_base',
+        'compress_pos_emb',
+        'cpu',
+    ],
+    'llamacpp_HF': [
+        'n_ctx',
+        'n_gqa',
+        'rms_norm_eps',
+        'n_gpu_layers',
+        'tensor_split',
+        'n_batch',
+        'threads',
+        'no_mmap',
+        'low_vram',
+        'mlock',
+        'llama_cpp_seed',
+        'mul_mat_q',
+        'alpha_value',
+        'rope_freq_base',
+        'compress_pos_emb',
+        'cpu',
+        'cfg_cache',
+        'llamacpp_HF_info',
+    ],
+    'ctransformers': [
+        'n_ctx',
+        'n_gpu_layers',
+        'n_batch',
+        'threads',
+        'model_type',
+        'no_mmap',
+        'mlock'
     ]
-}
+})
 
 loaders_samplers = {
     'Transformers': {
@@ -136,6 +155,7 @@ loaders_samplers = {
         'tfs',
         'top_a',
         'repetition_penalty',
+        'additive_repetition_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
@@ -166,6 +186,7 @@ loaders_samplers = {
         'tfs',
         'top_a',
         'repetition_penalty',
+        'additive_repetition_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
@@ -175,6 +196,8 @@ loaders_samplers = {
         'mirostat_mode',
         'mirostat_tau',
         'mirostat_eta',
+        'guidance_scale',
+        'negative_prompt',
         'ban_eos_token',
         'add_bos_token',
         'skip_special_tokens',
@@ -203,6 +226,7 @@ loaders_samplers = {
         'tfs',
         'top_a',
         'repetition_penalty',
+        'additive_repetition_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
@@ -233,6 +257,7 @@ loaders_samplers = {
         'tfs',
         'top_a',
         'repetition_penalty',
+        'additive_repetition_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
@@ -274,6 +299,7 @@ loaders_samplers = {
         'tfs',
         'top_a',
         'repetition_penalty',
+        'additive_repetition_penalty',
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
@@ -283,11 +309,43 @@ loaders_samplers = {
         'mirostat_mode',
         'mirostat_tau',
         'mirostat_eta',
+        'guidance_scale',
+        'negative_prompt',
         'ban_eos_token',
         'add_bos_token',
         'skip_special_tokens',
         'auto_max_new_tokens',
     },
+    'ctransformers': {
+        'temperature',
+        'top_p',
+        'top_k',
+        'repetition_penalty',
+        'repetition_penalty_range',
+    }
+}
+
+loaders_model_types = {
+    'GPTQ-for-LLaMa': [
+        "None",
+        "llama",
+        "opt",
+        "gptj",
+        "gptneox"
+    ],
+    'ctransformers': [
+        "None",
+        "gpt2",
+        "gptj",
+        "gptneox",
+        "llama",
+        "mpt",
+        "dollyv2"
+        "replit",
+        "starcoder",
+        "gptbigcode",
+        "falcon"
+    ],
 }
 
 
@@ -307,6 +365,13 @@ def blacklist_samplers(loader):
         return [gr.update(visible=True) for sampler in all_samplers]
     else:
         return [gr.update(visible=True) if sampler in loaders_samplers[loader] else gr.update(visible=False) for sampler in all_samplers]
+
+
+def get_model_types(loader):
+    if loader in loaders_model_types:
+        return loaders_model_types[loader]
+
+    return ["None"]
 
 
 def get_gpu_memory_keys():

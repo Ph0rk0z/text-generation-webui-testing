@@ -10,6 +10,8 @@ from transformers.generation.logits_process import (
     TemperatureLogitsWarper
 )
 
+global_scores = None
+
 
 class TailFreeLogitsWarper(LogitsWarper):
     def __init__(self, tfs: float, filter_value: float = -float("Inf"), min_tokens_to_keep: int = 1):
@@ -122,16 +124,27 @@ class MirostatLogitsWarper(LogitsWarper):
         return scores
 
 
+class SpyLogitsWarper(LogitsWarper):
+    def __init__(self):
+        pass
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+        global global_scores
+        global_scores = scores
+        return scores
+
+
 class RepetitionPenaltyLogitsProcessorWithRange(LogitsProcessor):
     '''
     Copied from the transformers library
     '''
 
-    def __init__(self, penalty: float, _range: int):
-        if not isinstance(penalty, float) or not (penalty > 0):
-            raise ValueError(f"`penalty` has to be a strictly positive float, but is {penalty}")
+    def __init__(self, penalty: float, additive_penalty: float, _range: int):
+        if not (penalty > 0):
+            raise ValueError(f"`penalty` has to be strictly positive, but is {penalty}")
 
         self.penalty = penalty
+        self.additive_penalty = additive_penalty
         self._range = _range
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
@@ -141,6 +154,7 @@ class RepetitionPenaltyLogitsProcessorWithRange(LogitsProcessor):
 
         # if score < 0 then repetition penalty has to be multiplied to reduce the previous token probability
         score = torch.where(score < 0, score * self.penalty, score / self.penalty)
+        score -= self.additive_penalty
 
         scores.scatter_(1, input_ids, score)
         return scores
@@ -168,18 +182,27 @@ def get_logits_warper_patch(self, generation_config):
     else:
         warpers += warpers_to_add
 
+    warpers.append(SpyLogitsWarper())
     return warpers
 
 
 def get_logits_processor_patch(self, **kwargs):
-    result = self._get_logits_processor_old(**kwargs)
     repetition_penalty_range = kwargs['generation_config'].repetition_penalty_range
     repetition_penalty = kwargs['generation_config'].repetition_penalty
+    additive_repetition_penalty = kwargs['generation_config'].additive_repetition_penalty
+    need_rep_pen_hijack = (repetition_penalty_range > 0) or (additive_repetition_penalty > 0)
+    if need_rep_pen_hijack:
+        # Make sure it always creates a RepetitionPenaltyLogitsProcessor
+        kwargs['generation_config'].repetition_penalty = 1.1  # must set to some value > 1
+    result = self._get_logits_processor_old(**kwargs)
+    if need_rep_pen_hijack:
+        # Now set the rep_pen back to the actual value (just in case)
+        kwargs['generation_config'].repetition_penalty = repetition_penalty
 
-    if repetition_penalty_range > 0:
+    if need_rep_pen_hijack:
         for i in range(len(result)):
             if result[i].__class__.__name__ == 'RepetitionPenaltyLogitsProcessor':
-                result[i] = RepetitionPenaltyLogitsProcessorWithRange(repetition_penalty, repetition_penalty_range)
+                result[i] = RepetitionPenaltyLogitsProcessorWithRange(repetition_penalty, additive_repetition_penalty, repetition_penalty_range)
 
     return result
 
@@ -192,6 +215,7 @@ def generation_config_init_patch(self, **kwargs):
     self.mirostat_eta = kwargs.pop("mirostat_eta", 0.1)
     self.mirostat_tau = kwargs.pop("mirostat_tau", 5)
     self.repetition_penalty_range = kwargs.pop("repetition_penalty_range", 0)
+    self.additive_repetition_penalty = kwargs.pop("additive_repetition_penalty", 0)
 
 
 def hijack_samplers():

@@ -31,6 +31,7 @@ def build_parameters(body, chat=False):
         'tfs': float(body.get('tfs', 1)),
         'top_a': float(body.get('top_a', 0)),
         'repetition_penalty': float(body.get('repetition_penalty', body.get('rep_pen', 1.1))),
+        'additive_repetition_penalty': float(body.get('additive_repetition_penalty', body.get('additive_rep_pen', 0))),
         'repetition_penalty_range': int(body.get('repetition_penalty_range', 0)),
         'encoder_repetition_penalty': float(body.get('encoder_repetition_penalty', 1.0)),
         'top_k': int(body.get('top_k', 0)),
@@ -68,8 +69,6 @@ def build_parameters(body, chat=False):
         name1, name2, _, greeting, context, _ = load_character_memoized(character, str(body.get('your_name', shared.settings['name1'])), shared.settings['name2'], instruct=False)
         name1_instruct, name2_instruct, _, _, context_instruct, turn_template = load_character_memoized(instruction_template, '', '', instruct=True)
         generate_params.update({
-            'stop_at_newline': bool(body.get('stop_at_newline', shared.settings['stop_at_newline'])),
-            'chat_generation_attempts': int(body.get('chat_generation_attempts', shared.settings['chat_generation_attempts'])),
             'mode': str(body.get('mode', 'chat')),
             'name1': str(body.get('name1', name1)),
             'name2': str(body.get('name2', name2)),
@@ -101,7 +100,10 @@ def _start_cloudflared(port: int, tunnel_id: str, max_attempts: int = 3, on_star
 
     for _ in range(max_attempts):
         try:
-            public_url = _run_cloudflared(port, port + 1, tunnel_id=tunnel_id)
+            if tunnel_id is not None:
+                public_url = _run_cloudflared(port, port + 1, tunnel_id=tunnel_id)
+            else:
+                public_url = _run_cloudflared(port, port + 1)
 
             if on_start:
                 on_start(public_url)
