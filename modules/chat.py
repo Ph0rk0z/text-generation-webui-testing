@@ -176,6 +176,9 @@ def get_stopping_strings(state):
             f"\n{state['name2']}:"
         ]
 
+    if 'stopping_strings' in state and isinstance(state['stopping_strings'], list):
+        stopping_strings += state.pop('stopping_strings')
+
     return stopping_strings
 
 
@@ -459,12 +462,17 @@ def load_character(character, name1, name2, instruct=False):
     greeting_field = 'greeting'
     picture = None
 
-    # Deleting the profile picture cache, if any
+    # Delete the profile picture cache, if any
     if Path("cache/pfp_character.png").exists() and not instruct:
         Path("cache/pfp_character.png").unlink()
 
+    if instruct:
+        name1 = name2 = ''
+        folder = 'instruction-templates'
+    else:
+        folder = 'characters'
+
     if character not in ['None', '', None]:
-        folder = 'characters' if not instruct else 'instruction-templates'
         picture = generate_pfp_cache(character)
         filepath = None
         for extension in ["yml", "yaml", "json"]:

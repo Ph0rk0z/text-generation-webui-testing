@@ -3,6 +3,7 @@ import math
 import re
 import traceback
 from functools import partial
+from pathlib import Path
 
 import gradio as gr
 import psutil
@@ -166,8 +167,11 @@ def create_ui():
                 with gr.Row():
                     shared.gradio['autoload_model'] = gr.Checkbox(value=shared.settings['autoload_model'], label='Autoload the model', info='Whether to load the model as soon as it is selected in the Model dropdown.')
 
-                shared.gradio['custom_model_menu'] = gr.Textbox(label="Download custom model or LoRA", info="Enter the Hugging Face username/model path, for instance: facebook/galactica-125m. To specify a branch, add it at the end after a \":\" character like this: facebook/galactica-125m:main")
-                shared.gradio['download_model_button'] = gr.Button("Download")
+                shared.gradio['custom_model_menu'] = gr.Textbox(label="Download model or LoRA", info="Enter the Hugging Face username/model path, for instance: facebook/galactica-125m. To specify a branch, add it at the end after a \":\" character like this: facebook/galactica-125m:main. To download a single file, enter its name in the second box.")
+                shared.gradio['download_specific_file'] = gr.Textbox(placeholder="File name (for GGUF/GGML)", show_label=False, max_lines=1)
+                with gr.Row():
+                    shared.gradio['download_model_button'] = gr.Button("Download", variant='primary')
+                    shared.gradio['get_file_list'] = gr.Button("Get file list")
 
                 with gr.Row():
                     shared.gradio['model_status'] = gr.Markdown('No model is loaded' if shared.model_name == 'None' else 'Ready')
@@ -211,7 +215,8 @@ def create_event_handlers():
         save_model_settings, gradio('model_menu', 'interface_state'), gradio('model_status'), show_progress=False)
 
     shared.gradio['lora_menu_apply'].click(load_lora_wrapper, gradio('lora_menu'), gradio('model_status'), show_progress=False)
-    shared.gradio['download_model_button'].click(download_model_wrapper, gradio('custom_model_menu'), gradio('model_status'), show_progress=True)
+    shared.gradio['download_model_button'].click(download_model_wrapper, gradio('custom_model_menu', 'download_specific_file'), gradio('model_status'), show_progress=True)
+    shared.gradio['get_file_list'].click(partial(download_model_wrapper, return_links=True), gradio('custom_model_menu', 'download_specific_file'), gradio('model_status'), show_progress=True)
     shared.gradio['autoload_model'].change(lambda x: gr.update(visible=not x), gradio('autoload_model'), gradio('load_model'))
 
 
@@ -247,7 +252,7 @@ def load_lora_wrapper(selected_loras):
     yield ("Successfuly applied the LoRAs")
 
 
-def download_model_wrapper(repo_id, progress=gr.Progress()):
+def download_model_wrapper(repo_id, specific_file, progress=gr.Progress(), return_links=False):
     try:
         downloader_module = importlib.import_module("download-model")
         downloader = downloader_module.ModelDownloader()
@@ -261,11 +266,15 @@ def download_model_wrapper(repo_id, progress=gr.Progress()):
         model, branch = downloader.sanitize_model_and_branch_names(model, branch)
 
         yield ("Getting the download links from Hugging Face")
-        links, sha256, is_lora = downloader.get_download_links_from_huggingface(model, branch, text_only=False)
+        links, sha256, is_lora, is_llamacpp = downloader.get_download_links_from_huggingface(model, branch, text_only=False, specific_file=specific_file)
+
+        if return_links:
+            yield '\n\n'.join([f"`{Path(link).name}`" for link in links])
+            return
 
         yield ("Getting the output folder")
         base_folder = shared.args.lora_dir if is_lora else shared.args.model_dir
-        output_folder = downloader.get_output_folder(model, branch, is_lora, base_folder=base_folder)
+        output_folder = downloader.get_output_folder(model, branch, is_lora, is_llamacpp=is_llamacpp, base_folder=base_folder)
 
         if check:
             progress(0.5)
@@ -273,8 +282,8 @@ def download_model_wrapper(repo_id, progress=gr.Progress()):
             downloader.check_model_files(model, branch, links, sha256, output_folder)
             progress(1.0)
         else:
-            yield (f"Downloading files to {output_folder}")
-            downloader.download_model_files(model, branch, links, sha256, output_folder, progress_bar=progress, threads=1)
+            yield (f"Downloading file{'s' if len(links) > 1 else ''} to `{output_folder}/`")
+            downloader.download_model_files(model, branch, links, sha256, output_folder, progress_bar=progress, threads=1, is_llamacpp=is_llamacpp)
             yield ("Done!")
     except:
         progress(1.0)

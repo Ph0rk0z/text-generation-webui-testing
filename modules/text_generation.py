@@ -80,9 +80,21 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False, escap
         reply, stop_found = apply_stopping_strings(reply, all_stop_strings)
         if is_stream:
             cur_time = time.time()
-            if cur_time - last_update > 0.041666666666666664:  # Limit streaming to 24 fps
-                last_update = cur_time
+
+            # Maximum number of tokens/second
+            if state['max_tokens_second'] > 0:
+                diff = 1 / state['max_tokens_second'] - (cur_time - last_update)
+                if diff > 0:
+                    time.sleep(diff)
+
+                last_update = time.time()
                 yield reply
+
+            # Limit updates to 24 per second to not stress low latency networks
+            else:
+                if cur_time - last_update > 0.041666666666666664:
+                    last_update = cur_time
+                    yield reply
 
         if stop_found:
             break
@@ -253,9 +265,7 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
     if state['ban_eos_token']:
         generate_params['suppress_tokens'] = [shared.tokenizer.eos_token_id]
 
-    if shared.args.no_cache:
-        generate_params.update({'use_cache': False})
-
+    generate_params.update({'use_cache': not shared.args.no_cache})
     if shared.args.deepspeed:
         generate_params.update({'synced_gpus': True})
 
