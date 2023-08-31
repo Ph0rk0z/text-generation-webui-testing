@@ -1,3 +1,4 @@
+import html
 import json
 
 import requests
@@ -15,6 +16,7 @@ def run(user_input, history):
         'user_input': user_input,
         'max_new_tokens': 250,
         'auto_max_new_tokens': False,
+        'max_tokens_second': 0,
         'history': history,
         'mode': 'instruct',  # Valid options: 'chat', 'chat-instruct', 'instruct'
         'character': 'Example',
@@ -72,7 +74,7 @@ def run(user_input, history):
         result = response.json()['results'][0]['history']
         print(json.dumps(result, indent=4))
         print()
-        print(result['visible'][-1][1])
+        print(html.unescape(result['visible'][-1][1]))
 
 
 if __name__ == '__main__':

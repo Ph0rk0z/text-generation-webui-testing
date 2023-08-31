@@ -1,4 +1,5 @@
 import asyncio
+import html
 import json
 import sys
 
@@ -21,6 +22,7 @@ async def run(user_input, history):
         'user_input': user_input,
         'max_new_tokens': 250,
         'auto_max_new_tokens': False,
+        'max_tokens_second': 0,
         'history': history,
         'mode': 'instruct',  # Valid options: 'chat', 'chat-instruct', 'instruct'
         'character': 'Example',
@@ -91,7 +93,7 @@ async def print_response_stream(user_input, history):
     async for new_history in run(user_input, history):
         cur_message = new_history['visible'][-1][1][cur_len:]
         cur_len += len(cur_message)
-        print(cur_message, end='')
+        print(html.unescape(cur_message), end='')
         sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
 
 
