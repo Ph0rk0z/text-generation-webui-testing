@@ -21,6 +21,14 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+9/9/23
+```
+Update exllama to the latest version because rope settings are changed.
+They will not work properly with the previous versions. This is a breaking change.
+It now reads a default rope base value from the model config. Overriding rope base
+with your own will use that, alpha value will apply to the inferred base.
+```
+
 8/10/23
 ```
 Add scaled ROPE to GPTQ classic. Requires you install git transformers.
