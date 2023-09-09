@@ -133,8 +133,11 @@ class ExllamaHF(PreTrainedModel):
         if shared.args.gpu_split:
             config.set_auto_map(shared.args.gpu_split)
             config.gpu_peer_fix = False
-        if shared.args.alpha_value > 1 or shared.args.rope_freq_base > 0:
-            config.alpha_value = RoPE.get_alpha_value(shared.args.alpha_value, shared.args.rope_freq_base)
+        if shared.args.alpha_value > 1 and shared.args.rope_freq_base == 0:
+            config.alpha_value = shared.args.alpa_value
+            config.calculate_rotary_embedding_base()
+        elif shared.args.rope_freq_base > 0:
+            config.rotaty_embedding_base = shared.args.rope_freq_base
             config.calculate_rotary_embedding_base()
         
         config.fused_attn = shared.args.quant_attn
