@@ -138,7 +138,6 @@ class ExllamaHF(PreTrainedModel):
             config.calculate_rotary_embedding_base()
         elif shared.args.rope_freq_base > 0:
             config.rotaty_embedding_base = shared.args.rope_freq_base
-            config.calculate_rotary_embedding_base()
         
         config.fused_attn = shared.args.quant_attn
         config.fused_mlp_thd = 0 if not shared.args.fused_mlp else 2
