@@ -15,6 +15,7 @@ from modules.LoRA import add_lora_to_model
 from modules.models import load_model, unload_model
 from modules.models_settings import (
     apply_model_settings_to_state,
+    get_model_metadata,
     save_model_settings,
     update_model_parameters
 )
@@ -101,6 +102,7 @@ def create_ui():
                             shared.gradio['threshold'] = gr.Slider(label="8bit threshold", minimum=0.0, maximum=10.0, value=shared.args.threshold, info='Threshold for 8bit on older cards if you did not patch BnB' )
 
 
+
                     with gr.Row():
                         with gr.Column():
                         # GPTQ
@@ -142,8 +144,6 @@ def create_ui():
                             shared.gradio['n_ctx'] = gr.Slider(minimum=0, maximum=32768, step=256, label="n_ctx", value=shared.args.n_ctx)
                             shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
                             shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
-                            shared.gradio['n_gqa'] = gr.Slider(minimum=0, maximum=16, step=1, label="n_gqa", value=shared.args.n_gqa, info='GGML only (not used by GGUF): Grouped-Query Attention. Must be 8 for llama-2 70b.')
-                            shared.gradio['rms_norm_eps'] = gr.Slider(minimum=0, maximum=1e-5, step=1e-6, label="rms_norm_eps", value=shared.args.rms_norm_eps, info='GGML only (not used by GGUF): 5e-6 is a good value for llama-2.')
                             shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
                             shared.gradio['low_vram'] = gr.Checkbox(label="low-vram", value=shared.args.low_vram)
                             shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
@@ -168,7 +168,7 @@ def create_ui():
                     shared.gradio['autoload_model'] = gr.Checkbox(value=shared.settings['autoload_model'], label='Autoload the model', info='Whether to load the model as soon as it is selected in the Model dropdown.')
 
                 shared.gradio['custom_model_menu'] = gr.Textbox(label="Download model or LoRA", info="Enter the Hugging Face username/model path, for instance: facebook/galactica-125m. To specify a branch, add it at the end after a \":\" character like this: facebook/galactica-125m:main. To download a single file, enter its name in the second box.")
-                shared.gradio['download_specific_file'] = gr.Textbox(placeholder="File name (for GGUF/GGML)", show_label=False, max_lines=1)
+                shared.gradio['download_specific_file'] = gr.Textbox(placeholder="File name (for GGUF models)", show_label=False, max_lines=1)
                 with gr.Row():
                     shared.gradio['download_model_button'] = gr.Button("Download", variant='primary')
                     shared.gradio['get_file_list'] = gr.Button("Get file list")
@@ -222,23 +222,29 @@ def create_event_handlers():
 
 def load_model_wrapper(selected_model, loader, autoload=False):
     if not autoload:
-        yield f"The settings for {selected_model} have been updated.\nClick on \"Load\" to load it."
+        yield f"The settings for `{selected_model}` have been updated.\n\nClick on \"Load\" to load it."
         return
 
     if selected_model == 'None':
         yield "No model selected"
     else:
         try:
-            yield f"Loading {selected_model}..."
+            yield f"Loading `{selected_model}`..."
             shared.model_name = selected_model
             unload_model()
             if selected_model != '':
                 shared.model, shared.tokenizer = load_model(shared.model_name, loader)
 
             if shared.model is not None:
-                yield f"Successfully loaded {selected_model}"
+                output = f"Successfully loaded `{selected_model}`."
+
+                settings = get_model_metadata(selected_model)
+                if 'instruction_template' in settings:
+                    output += '\n\nIt seems to be an instruction-following model with template "{}". In the chat tab, instruct or chat-instruct modes should be used.'.format(settings['instruction_template'])
+
+                yield output
             else:
-                yield f"Failed to load {selected_model}."
+                yield f"Failed to load `{selected_model}`."
         except:
             exc = traceback.format_exc()
             logger.error('Failed to load the model.')

@@ -3,7 +3,7 @@ from pathlib import Path
 import torch.nn.functional as F
 from torch import version as torch_version
 
-from modules import RoPE, shared
+from modules import shared
 from modules.logging_colors import logger
 from modules.models import clear_torch_cache
 from modules.text_generation import get_max_prompt_length
@@ -50,6 +50,7 @@ class ExllamaModel:
         config = ExLlamaConfig(str(model_config_path))
         config.model_path = str(model_path)
 
+
         # Tuning
         config.matmul_recons_thd = 8
         config.fused_mlp_thd = 2
@@ -57,6 +58,12 @@ class ExllamaModel:
         config.matmul_fused_remap = False
         config.fused_attn = shared.args.quant_attn
         config.use_flash_attn_2 = shared.args.flash_attention
+
+        if shared.args.alpha_value > 1 and shared.args.rope_freq_base == 0:
+            config.alpha_value = shared.args.alpha_value
+            config.calculate_rotary_embedding_base()
+        elif shared.args.rope_freq_base > 0:
+            config.rotary_embedding_base = shared.args.rope_freq_base
 
         if (shared.args.nohalf2 or torch_version.hip):
             config.rmsnorm_no_half2 = True
@@ -70,12 +77,6 @@ class ExllamaModel:
         if shared.args.gpu_split:
             config.set_auto_map(shared.args.gpu_split)
             config.gpu_peer_fix = False
-
-        if shared.args.alpha_value > 1 and shared.args.rope_freq_base == 0:
-            config.alpha_value = shared.args.alpha_value
-            config.calculate_rotary_embedding_base()
-        elif shared.args.rope_freq_base > 0:
-            config.rotary_embedding_base = shared.args.rope_freq_base
 
         model = ExLlama(config)
         tokenizer = ExLlamaTokenizer(str(tokenizer_model_path))
