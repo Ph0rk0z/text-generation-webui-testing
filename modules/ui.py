@@ -80,8 +80,6 @@ def list_model_elements():
         'n_gpu_layers',
         'tensor_split',
         'n_ctx',
-        'n_gqa',
-        'rms_norm_eps',
         'llama_cpp_seed',
         'no_cache',
         'sdp_attention',

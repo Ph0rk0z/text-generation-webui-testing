@@ -272,6 +272,7 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
         from monkeypatch.peft_tuners_lora_monkey_patch import replace_peft_model_with_gptq_lora_model
         replace_peft_model_with_gptq_lora_model()
 
+
     global WANT_INTERRUPT
     WANT_INTERRUPT = False
 
@@ -513,6 +514,7 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
         for n, m in lora_model.named_modules():
             if '4bit' in str(type(m)):
                 if shared.args.v1:
+
                     m.zeros = m.zeros.half()
                 m.scales = m.scales.half()
 

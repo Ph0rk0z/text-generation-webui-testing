@@ -32,7 +32,7 @@ settings = {
     'show_controls': True,
     'start_with': '',
     'mode': 'chat',
-    'chat_style': 'TheEncrypted777',
+    'chat_style': 'cai-chat',
     'character': 'None',
     'prompt-default': 'QA',
     'prompt-notebook': 'QA',
@@ -131,8 +131,6 @@ parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layer
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
 parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
-parser.add_argument('--n_gqa', type=int, default=0, help='grouped-query attention. Must be 8 for llama-2 70b.')
-parser.add_argument('--rms_norm_eps', type=float, default=0, help='5e-6 is a good value for llama-2 models.')
 
 # GPTQ
 parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ implementation.')
