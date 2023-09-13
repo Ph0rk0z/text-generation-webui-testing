@@ -8,9 +8,8 @@ accelerate==0.22.*
 colorama
 datasets
 einops
-exllamav2==0.0.0
+exllamav2==0.0.1
 markdown
-ninja
 numpy==1.24
 optimum==1.13.1
 pandas

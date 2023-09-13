@@ -112,8 +112,11 @@ class Exllamav2HF(PreTrainedModel):
         pretrained_model_name_or_path = Path(f'{shared.args.model_dir}') / Path(pretrained_model_name_or_path)
 
         config = ExLlamaV2Config()
-        config.model_dir = pretrained_model_name_or_path
+        config.model_dir = str(pretrained_model_name_or_path)
         config.prepare()
+
         config.max_seq_len = shared.args.max_seq_len
+        config.scale_pos_emb = shared.args.compress_pos_emb
+        config.scale_alpha_value = shared.args.alpha_value
 
         return Exllamav2HF(config)

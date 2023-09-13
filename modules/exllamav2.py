@@ -24,10 +24,13 @@ class Exllamav2Model:
         path_to_model = Path(f'{shared.args.model_dir}') / Path(path_to_model)
 
         config = ExLlamaV2Config()
-        config.model_dir = path_to_model
+        config.model_dir = str(path_to_model)
         config.prepare()
 
         config.max_seq_len = shared.args.max_seq_len
+        config.scale_pos_emb = shared.args.compress_pos_emb
+        config.scale_alpha_value = shared.args.alpha_value
+        
         model = ExLlamaV2(config)
 
         split = None
