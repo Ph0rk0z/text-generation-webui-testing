@@ -49,6 +49,7 @@ settings = {
     'auto_max_new_tokens': False,
     'max_tokens_second': 0,
     'ban_eos_token': False,
+    'custom_token_bans': '',
     'add_bos_token': True,
     'skip_special_tokens': True,
     'stream': True,
@@ -89,6 +90,8 @@ parser.add_argument('--model-menu', action='store_true', help='Show a model menu
 parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 parser.add_argument('--settings', type=str, help='Load the default interface settings from this yaml file. See settings-template.yaml for an example. If you create a file called settings.yaml, this file will be loaded by default without the need to use the --settings flag.')
 parser.add_argument('--extensions', type=str, nargs="+", help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
+parser.add_argument('--verbose', action='store_true', help='Print the prompts to the terminal.')
+parser.add_argument('--chat-buttons', action='store_true', help='Show buttons on chat tab instead of hover menu.')
 
 # Model loader
 parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv')
@@ -181,7 +184,6 @@ parser.add_argument('--listen-host', type=str, help='The hostname that the serve
 parser.add_argument('--listen-port', type=int, help='The listening port that the server will use.')
 parser.add_argument('--share', action='store_true', help='Create a public URL. This is useful for running the web UI on Google Colab or similar.')
 parser.add_argument('--auto-launch', action='store_true', default=False, help='Open the web UI in the default browser upon launch.')
-parser.add_argument('--verbose', action='store_true', help='Print the prompts to the terminal.')
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--gradio-auth-path", type=str, help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--ssl-keyfile", type=str, help='The path to the SSL certificate key file.', default=None)
@@ -241,6 +243,10 @@ def fix_loader_name(name):
         return 'ExLlama'
     elif name in ['exllama-hf', 'exllama_hf', 'exllama hf', 'ex-llama-hf', 'ex_llama_hf']:
         return 'ExLlama_HF'
+    elif name in ['exllamav2', 'exllama-v2', 'ex_llama-v2', 'exlamav2', 'exlama-v2', 'exllama2', 'exllama-2']:
+        return 'ExLlamav2'
+    elif name in ['exllamav2-hf', 'exllamav2_hf', 'exllama-v2-hf', 'exllama_v2_hf', 'exllama-v2_hf', 'exllama2-hf', 'exllama2_hf', 'exllama-2-hf', 'exllama_2_hf', 'exllama-2_hf']:
+        return 'ExLlamav2_HF'
     elif name in ['ctransformers', 'ctranforemrs', 'ctransformer']:
         return 'ctransformers'
 
@@ -277,10 +283,8 @@ with Path(f'{args.model_dir}/config.yaml') as p:
 with Path(f'{args.model_dir}/config-user.yaml') as p:
     if p.exists():
         user_config = yaml.safe_load(open(p, 'r').read())
-        for k in user_config:
-            if k in model_config:
-                model_config[k].update(user_config[k])
-            else:
-                model_config[k] = user_config[k]
+    else:
+        user_config = {}
 
 model_config = OrderedDict(model_config)
+user_config = OrderedDict(user_config)
