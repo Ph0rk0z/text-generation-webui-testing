@@ -62,6 +62,8 @@ def list_model_elements():
         'threads',
         'n_batch',
         'no_mmap',
+        'numa',
+        'main_gpu',
         'mlock',
         'n_gpu_layers',
         'autograd',

@@ -144,6 +144,8 @@ def create_ui():
                             shared.gradio['n_ctx'] = gr.Slider(minimum=0, maximum=32768, step=256, label="n_ctx", value=shared.args.n_ctx)
                             shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
                             shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
+                            shared.gradio['numa'] = gr.Checkbox(label="numa support", value=shared.args.numa)
+                            shared.gradio['main_gpu'] = gr.Number(label='Main GPU', value=shared.args.main_gpu)
                             shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
                             shared.gradio['low_vram'] = gr.Checkbox(label="low-vram", value=shared.args.low_vram)
                             shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
