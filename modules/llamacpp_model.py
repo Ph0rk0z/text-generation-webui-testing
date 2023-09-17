@@ -76,7 +76,7 @@ class LlamaCppModel:
             'n_threads': shared.args.threads or None,
             'n_batch': shared.args.n_batch,
             'numa': shared.args.numa,
-            'main_gpu': shared.args.maing_gpu,
+            'main_gpu': shared.args.main_gpu,
             'use_mmap': not shared.args.no_mmap,
             'use_mlock': shared.args.mlock,
             'mul_mat_q': shared.args.mul_mat_q,
