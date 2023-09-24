@@ -94,7 +94,7 @@ def get_available_prompts():
 
 def get_available_characters():
     paths = (x for x in Path('characters').iterdir() if x.suffix in ('.json', '.yaml', '.yml'))
-    return ['None'] + sorted(set((k.stem for k in paths)), key=natural_keys)
+    return sorted(set((k.stem for k in paths)), key=natural_keys)
 
 
 def get_available_instruction_templates():
@@ -124,3 +124,7 @@ def get_datasets(path: str, ext: str):
 
 def get_available_chat_styles():
     return sorted(set(('-'.join(k.stem.split('-')[1:]) for k in Path('css').glob('chat_style*.css'))), key=natural_keys)
+
+
+def get_available_grammars():
+    return ['None'] + sorted([item.name for item in list(Path('grammars').glob('*.gbnf'))], key=natural_keys)
