@@ -29,6 +29,7 @@ loaders_and_params = OrderedDict({
         'alpha_value',
         'rope_freq_base',
         'compress_pos_emb',
+        'disable_exllama',
         'transformers_info'
     ],
     'ExLlama_HF': [
