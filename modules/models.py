@@ -194,7 +194,7 @@ def huggingface_loader(model_name):
 
         if shared.args.disable_exllama:
             try:
-                gptq_config = GPTQConfig(bits=config.quantization_config.get('bits', 4), disable_exllama=True)
+                gptq_config = GPTQConfig(bits=config.quantization_config.get('bits', 4), disable_exllama=True, disable_exllamav2=True)
                 params['quantization_config'] = gptq_config
                 logger.info('Loading with ExLlama kernel disabled.')
             except:
