@@ -113,7 +113,6 @@ loaders_and_params = OrderedDict({
         'no_cache',
         'alpha_value',
         'compress_pos_emb',
-        'gptq_for_llama_info'
         'use_fast',
         'gptq_for_llama_info',
     ],

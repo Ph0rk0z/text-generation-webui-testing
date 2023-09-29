@@ -133,7 +133,6 @@ parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layer
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
 parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
-parser.add_argument('--numa', action='store_true', help='Activate NUMA task allocation for llama.cpp')
 
 # GPTQ
 parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ implementation.')
