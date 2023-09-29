@@ -26,6 +26,7 @@ loaders_and_params = OrderedDict({
         'xformers',
         'sdp_attention',
         'no_cache',
+        'use_fast',
         'alpha_value',
         'rope_freq_base',
         'compress_pos_emb',
@@ -43,6 +44,7 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cfg_cache',
+        'use_fast',
         'exllama_HF_info',
     ],
     'ExLlamav2_HF': [
@@ -51,6 +53,7 @@ loaders_and_params = OrderedDict({
         'cfg_cache',
         'alpha_value',
         'compress_pos_emb',
+        'use_fast',
     ],
     'ExLlama': [
         'gpu_split',
@@ -88,6 +91,9 @@ loaders_and_params = OrderedDict({
         'sdp_attention',
         'disable_exllama',
         'no_cache',
+        'auto_devices',
+        'trust_remote_code',
+        'use_fast',
         'autogptq_info',
     ],
     'GPTQ-for-LLaMa': [
@@ -108,6 +114,8 @@ loaders_and_params = OrderedDict({
         'alpha_value',
         'compress_pos_emb',
         'gptq_for_llama_info'
+        'use_fast',
+        'gptq_for_llama_info',
     ],
     'llama.cpp': [
         'n_ctx',
@@ -126,6 +134,7 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cpu',
+        'numa',
     ],
     'llamacpp_HF': [
         'n_ctx',
@@ -144,7 +153,9 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cpu',
+        'numa',
         'cfg_cache',
+        'use_fast',
         'llamacpp_HF_info',
     ],
     'ctransformers': [
@@ -237,6 +248,7 @@ loaders_samplers = {
         'temperature',
         'top_p',
         'top_k',
+        'typical_p',
         'repetition_penalty',
         'repetition_penalty_range',
         'seed',

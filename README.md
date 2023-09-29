@@ -219,7 +219,7 @@ To define persistent command-line flags like `--listen` or `--api`, edit the `CM
 * There is no need to run any of those scripts as admin/root.
 * For additional instructions about AMD setup, WSL setup, and nvcc installation, consult [this page](https://github.com/oobabooga/text-generation-webui/blob/main/docs/One-Click-Installers.md).
 * The installer has been tested mostly on NVIDIA GPUs. If you can find a way to improve it for your AMD/Intel Arc/Mac Metal GPU, you are highly encouraged to submit a PR to this repository. The main file to be edited is `one_click.py`.
-* For automated installation, you can use the `GPU_CHOICE` and `LAUNCH_AFTER_INSTALL` environment variables. For instance: `GPU_CHOICE=A LAUNCH_AFTER_INSTALL=False ./start_linux.sh`.
+* For automated installation, you can use the `GPU_CHOICE`, `LAUNCH_AFTER_INSTALL`, and `INSTALL_EXTENSIONS` environment variables. For instance: `GPU_CHOICE=A LAUNCH_AFTER_INSTALL=False INSTALL_EXTENSIONS=False ./start_linux.sh`.
 
 ### Manual installation using Conda
 
@@ -440,6 +440,7 @@ Optionally, you can use the following command-line flags:
 | `--sdp-attention`                           | Use torch 2.0's sdp attention. |
 | `--flash-attention`                         | Use Flash Attention 2. This drastically reduces the VRAM cost |
 | `--trust-remote-code`                       | Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon. |
+| `--use_fast`                                | Set use_fast=True while loading a tokenizer. |
 
 #### Accelerate 4-bit
 
@@ -465,14 +466,15 @@ Optionally, you can use the following command-line flags:
 
 | Flag          | Description |
 |---------------|---------------|
+| `--mul_mat_q` | Activate new mulmat kernels. |
+| `--tensor_split TENSOR_SPLIT`       | Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17 |
+| `--llama_cpp_seed SEED`             | Seed for llama-cpp models. Default 0 (random). |
+| `--cache-capacity CACHE_CAPACITY`   | Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. |
+|`--cfg-cache`                        | llamacpp_HF: Create an additional cache for CFG negative prompts. |
 | `--no-mmap`   | Prevent mmap from being used. |
 | `--mlock`     | Force the system to keep the model in RAM. |
-| `--mul_mat_q` | Activate new mulmat kernels. |
-| `--cache-capacity CACHE_CAPACITY`   | Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. |
-| `--tensor_split TENSOR_SPLIT`  | Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17 |
-| `--llama_cpp_seed SEED`        | Seed for llama-cpp models. Default 0 (random). |
-| `--cpu`                        | Use the CPU version of llama-cpp-python instead of the GPU-accelerated version. |
-|`--cfg-cache`                   | llamacpp_HF: Create an additional cache for CFG negative prompts. |
+| `--numa`      | Activate NUMA task allocation for llama.cpp |
+| `--cpu`       | Use the CPU version of llama-cpp-python instead of the GPU-accelerated version. |
 
 #### ctransformers
 
