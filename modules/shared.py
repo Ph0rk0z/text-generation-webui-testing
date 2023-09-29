@@ -111,6 +111,7 @@ parser.add_argument('--flash-attention', action='store_true', help="Use Flash At
 parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon.")
 parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
+parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True while loading a tokenizer.")
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
@@ -223,8 +224,10 @@ if args.trust_remote_code:
     logger.warning("trust_remote_code is enabled. This is dangerous.")
 if args.share:
     logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
-if args.multi_user:
-    logger.warning("The multi-user mode is highly experimental. DO NOT EXPOSE IT TO THE INTERNET.")
+if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
+    logger.warning("\nYou are potentially exposing the web UI to the entire internet without any access password.\nYou can create one with the \"--gradio-auth\" flag like this:\n\n--gradio-auth username:password\n\nMake sure to replace username:password with your own.")
+    if args.multi_user:
+        logger.warning("\nThe multi-user mode is highly experimental and should not be shared publicly.")
 
 
 def fix_loader_name(name):
