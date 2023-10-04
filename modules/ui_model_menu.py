@@ -103,9 +103,6 @@ def create_ui():
                             shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
                             shared.gradio['threshold'] = gr.Slider(label="8bit threshold", minimum=0.0, maximum=10.0, value=shared.args.threshold, info='Threshold for 8bit on older cards if you did not patch BnB' )
 
-
-
-
                     with gr.Row():
                         with gr.Column():
                         # GPTQ
@@ -120,7 +117,7 @@ def create_ui():
                             shared.gradio['nohalf2'] = gr.Checkbox(label="nohalf2", value=shared.args.nohalf2, info='Disable half2 to speed up pre-7.0 GPU')
 
                         # Rope
-                            shared.gradio['alpha_value'] = gr.Slider(label='alpha_value', minimum=1, maximum=32, step=0.1, info='Positional embeddings alpha factor for NTK RoPE scaling. Scaling is not identical to embedding compression. Use either this or compress_pos_emb, not both.', value=shared.args.alpha_value)
+                            shared.gradio['alpha_value'] = gr.Slider(label='alpha_value', minimum=1, maximum=32, step=0.1, info='Positional embeddings alpha factor for NTK RoPE scaling. Recommended values (NTKv1): 1.75 for 1.5x context, 2.5 for 2x context. Use either this or compress_pos_emb, not both.', value=shared.args.alpha_value)
                             shared.gradio['rope_freq_base'] = gr.Slider(label='rope_freq_base', minimum=0, maximum=1000000, step=1000, info='If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63)', value=shared.args.rope_freq_base)
                             shared.gradio['compress_pos_emb'] = gr.Slider(label='compress_pos_emb', minimum=1, maximum=8, step=1, info='Positional embeddings compression factor. Should be set to (context length) / (model\'s original context length). Equal to 1/rope_freq_scale.', value=shared.args.compress_pos_emb)
                                          
@@ -146,11 +143,11 @@ def create_ui():
                             shared.gradio['n_gpu_layers'] = gr.Slider(label="n-gpu-layers", minimum=0, maximum=128, value=shared.args.n_gpu_layers)
                             shared.gradio['n_ctx'] = gr.Slider(minimum=0, maximum=32768, step=256, label="n_ctx", value=shared.args.n_ctx)
                             shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
+                            shared.gradio['threads_batch'] = gr.Slider(label="threads_batch", minimum=0, step=1, maximum=32, value=shared.args.threads_batch)
                             shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
                             shared.gradio['numa'] = gr.Checkbox(label="numa support", value=shared.args.numa)
                             shared.gradio['main_gpu'] = gr.Number(label='Main GPU', value=shared.args.main_gpu)
                             shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
-                            shared.gradio['low_vram'] = gr.Checkbox(label="low-vram", value=shared.args.low_vram)
                             shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
                             shared.gradio['mul_mat_q'] = gr.Checkbox(label="mul_mat_q", value=shared.args.mul_mat_q, info='Recommended in most cases. Improves generation speed by 10-20%.')
                             shared.gradio['cfg_cache'] = gr.Checkbox(label="cfg-cache", value=shared.args.cfg_cache, info='Create an additional cache for CFG negative prompts.')
@@ -302,9 +299,10 @@ def download_model_wrapper(repo_id, specific_file, progress=gr.Progress(), retur
 
 
 def update_truncation_length(current_length, state):
-    if state['loader'].lower().startswith('exllama'):
-        return state['max_seq_len']
-    elif state['loader'] in ['llama.cpp', 'llamacpp_HF', 'ctransformers']:
-        return state['n_ctx']
-    else:
-        return current_length
+    if 'loader' in state:
+        if state['loader'].lower().startswith('exllama'):
+            return state['max_seq_len']
+        elif state['loader'] in ['llama.cpp', 'llamacpp_HF', 'ctransformers']:
+            return state['n_ctx']
+
+    return current_length
