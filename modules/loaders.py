@@ -169,7 +169,6 @@ loaders_and_params = OrderedDict({
     'AutoAWQ': [
         'cpu_memory',
         'gpu_memory',
-        'auto_devices',
         'max_seq_len',
         'n_batch',
         'quant_attn',
