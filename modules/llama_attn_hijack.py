@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
-import transformers.models.llama.modeling_llama
+#import transformers.models.llama.modeling_llama
 
 import modules.shared as shared
 from modules.logging_colors import logger
@@ -17,6 +17,7 @@ from modules.logging_colors import logger
 
 
 def hijack_llama_attention():
+    import transformers.models.llama.modeling_llama
     if shared.args.xformers:
         transformers.models.llama.modeling_llama.LlamaAttention.forward = xformers_forward
         logger.info("Replaced attention with xformers_attention")
