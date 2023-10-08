@@ -157,7 +157,7 @@ def add_lora_exllamav2(lora_names):
         logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join([lora_names[0]])))
         if shared.model.__class__.__name__ == 'Exllamav2Model':
             lora = ExLlamaV2Lora.from_directory(shared.model.model, str(lora_path))
-            shared.model.generator.lora = lora
+            shared.model.lora = lora
         else:
             lora = ExLlamaV2Lora.from_directory(shared.model.ex_model, str(lora_path))
             shared.model.lora = lora
