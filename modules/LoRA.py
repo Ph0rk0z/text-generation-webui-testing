@@ -142,7 +142,7 @@ def add_lora_exllamav2(lora_names):
 
     if len(lora_names) == 0:
         if shared.model.__class__.__name__ == 'Exllamav2Model':
-            shared.model.generator.lora = None
+            shared.model.lora = None
         else:
             shared.model.lora = None
 
