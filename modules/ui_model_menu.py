@@ -137,7 +137,7 @@ def create_ui():
                             shared.gradio['attention_info'] = gr.Markdown('Hijack Attention via:')
                             shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
                             shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Torch 2.0 SDP attention')
-                            shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention 2. Compute 7.0 and up.')
+                            shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention 2. Ampere and up.')
 
                         # Llama.cpp
                             shared.gradio['n_gpu_layers'] = gr.Slider(label="n-gpu-layers", minimum=0, maximum=128, value=shared.args.n_gpu_layers)
