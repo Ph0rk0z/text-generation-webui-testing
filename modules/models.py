@@ -290,7 +290,7 @@ def AutoAWQ_loader(model_name):
        quant_path=model_dir,
        max_new_tokens=shared.args.max_seq_len,
        trust_remote_code=shared.args.trust_remote_code,
-       fuse_layers=not shared.args.no_inject_fused_attention,
+       fuse_layers=shared.args.quant_attn,
        max_memory=get_max_memory_dict(),
        batch_size=shared.args.n_batch,
        safetensors=not shared.args.trust_remote_code)
