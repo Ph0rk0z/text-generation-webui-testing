@@ -172,6 +172,9 @@ loaders_and_params = OrderedDict({
         'max_seq_len',
         'n_batch',
         'quant_attn',
+        'flash_attention',
+        'xformers',
+        'sdp_attention',
         'trust_remote_code',
         'use_fast',
     ]
