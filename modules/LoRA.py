@@ -153,15 +153,13 @@ def add_lora_exllamav2(lora_names):
             logger.warning('Only the first one in the list will be loaded.')
 
         lora_path = get_lora_path(lora_names[0])
-        lora_config_path = lora_path / "adapter_config.json"
-        lora_adapter_path = lora_path / "adapter_model.bin"
 
         logger.info("Applying the following LoRAs to {}: {}".format(shared.model_name, ', '.join([lora_names[0]])))
         if shared.model.__class__.__name__ == 'Exllamav2Model':
-            lora = ExLlamaV2Lora(shared.model.model, str(lora_config_path), str(lora_adapter_path))
+            lora = ExLlamaV2Lora.from_directory(shared.model.model, str(lora_path))
             shared.model.generator.lora = lora
         else:
-            lora = ExLlamaV2Lora(shared.model.ex_model, str(lora_config_path), str(lora_adapter_path))
+            lora = ExLlamaV2Lora.from_directory(shared.model.ex_model, str(lora_path))
             shared.model.lora = lora
 
         shared.lora_names = [lora_names[0]]
