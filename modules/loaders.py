@@ -172,7 +172,7 @@ loaders_and_params = OrderedDict({
         'auto_devices',
         'max_seq_len',
         'n_batch',
-        'no_inject_fused_attention',
+        'quant_attn',
         'trust_remote_code',
         'use_fast',
     ]
