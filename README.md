@@ -21,7 +21,7 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
-10/8/23
+10/11/23
 ```
 GPTQ Merged fixed to work with new PEFT.
 ```
