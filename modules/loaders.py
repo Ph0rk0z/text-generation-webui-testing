@@ -101,6 +101,8 @@ loaders_and_params = OrderedDict({
         'groupsize',
         'model_type',
         'pre_layer',
+        'gpu_memory',
+        'auto_devices',
         'autograd',
         'v1',
         'quant_attn',
