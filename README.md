@@ -23,6 +23,11 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 10/8/23
 ```
+GPTQ Merged fixed to work with new PEFT.
+```
+
+10/8/23
+```
 Exllamav2 lora support and updating to pytorch 2.1.0 
 ```
 
