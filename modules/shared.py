@@ -77,7 +77,7 @@ parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpForma
 parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
 parser.add_argument('--chat', action='store_true', help='DEPRECATED')
 parser.add_argument('--multi-user', action='store_true', help='Multi-user mode. Chat histories are not saved or automatically loaded. WARNING: this is highly experimental.')
-parser.add_argument('--character', type=str, help='The name of the character to load in chat mode by default.')
+parser.add_argument('--character', type=str, default='Assistant', help='The name of the character to load in chat mode by default.')
 parser.add_argument('--model', type=str, help='Name of the model to load by default.')
 parser.add_argument('--lora', type=str, nargs="+", help='The list of LoRAs to load. If you want to load more than one LoRA, write the names separated by spaces.')
 parser.add_argument("--model-dir", type=str, default='models/', help="Path to directory with all the models")
