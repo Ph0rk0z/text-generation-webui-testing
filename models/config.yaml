@@ -22,7 +22,6 @@
   model_type: 'replit'
 .*$:
   mode: 'chat'
-  instruction_template: 'None'
 .*(oasst|openassistant-|stablelm-7b-sft-v7-epoch-3):
   instruction_template: 'Open Assistant'
   skip_special_tokens: false
