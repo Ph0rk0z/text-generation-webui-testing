@@ -2,7 +2,7 @@ accelerate==0.23.*
 colorama
 datasets
 einops
-exllamav2==0.0.5; platform_system != "Darwin" and platform_machine != "x86_64"
+exllamav2==0.0.6; platform_system != "Darwin" and platform_machine != "x86_64"
 gradio==3.47.*
 markdown
 numpy==1.24
@@ -31,11 +31,10 @@ https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/b
 https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.11/llama_cpp_python-0.2.11-cp310-cp310-win_amd64.whl; platform_system == "Windows"
 
 # CUDA wheels
-https://github.com/PanQiWei/AutoGPTQ/releases/download/v0.4.2/auto_gptq-0.4.2+cu117-cp310-cp310-win_amd64.whl; platform_system == "Windows"
-https://github.com/jllllll/exllama/releases/download/0.0.17/exllama-0.0.17+cu117-cp310-cp310-win_amd64.whl; platform_system == "Windows"
-
-
-https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/textgen-webui/llama_cpp_python_cuda-0.2.6+cu117-cp310-cp310-win_amd64.whl; platform_system == "Windows"
+https://github.com/jllllll/AutoGPTQ/releases/download/v0.4.2/auto_gptq-0.4.2+cu118-cp310-cp310-win_amd64.whl; platform_system == "Windows"
+https://github.com/jllllll/exllama/releases/download/0.0.18/exllama-0.0.18+cu118-cp310-cp310-win_amd64.whl; platform_system == "Windows"
+https://github.com/turboderp/exllamav2/releases/download/v0.0.6/exllamav2-0.0.6+cu118-cp310-cp310-win_amd64.whl; platform_system == "Windows"
+https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/textgen-webui/llama_cpp_python_cuda-0.2.11+cu118-cp310-cp310-win_amd64.whl; platform_system == "Windows"
 
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
@@ -43,4 +42,5 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # ctransformers
 ctransformers
 autoawq
+autoawq==0.1.4
 
