@@ -21,6 +21,12 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+10/16/23
+```
+Update exllamav2 to use the new 8bit cache. So far no issues.
+Tested LoRA, multi-gpu and CFG on 70b models.
+```
+
 10/11/23
 ```
 GPTQ Merged fixed to work with new PEFT.
