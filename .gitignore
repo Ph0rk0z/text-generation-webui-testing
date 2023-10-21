@@ -9,7 +9,6 @@
 /cache
 /characters
 /css
-/extensions
 /grammars
 /installer_files
 /logs
@@ -17,7 +16,6 @@
 /models
 /presets
 /prompts
-/repositories
 /softprompts
 /torch-dumps
 /training/datasets

@@ -19,3 +19,4 @@
 [submodule "extensions/Playground"]
 	path = extensions/Playground
 	url = https://github.com/FartyPants/Playground
+    branch=main
