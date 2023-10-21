@@ -207,7 +207,7 @@ To learn how to use the various features, check out the Documentation: https://g
 
 ### One-click installers
 
-1) Clone or download the repository.
+1) Clone or [download](https://github.com/oobabooga/text-generation-webui/archive/refs/heads/main.zip) the repository.
 2) Run the `start_linux.sh`, `start_windows.bat`, `start_macos.sh`, or `start_wsl.bat` script depending on your OS.
 3) Select your GPU vendor when asked.
 4) Have fun!
@@ -216,7 +216,7 @@ To learn how to use the various features, check out the Documentation: https://g
 
 The script creates a folder called `installer_files` where it sets up a Conda environment using Miniconda. The installation is self-contained: if you want to reinstall, just delete `installer_files` and run the start script again.
 
-To launch the webui in the future after it is already installed, run the same `start` script. 
+To launch the webui in the future after it is already installed, run the same `start` script.
 
 #### Getting updates
 
@@ -235,7 +235,7 @@ To define persistent command-line flags like `--listen` or `--api`, edit the `CM
 * There is no need to run any of those scripts as admin/root.
 * For additional instructions about AMD setup, WSL setup, and nvcc installation, consult [this page](https://github.com/oobabooga/text-generation-webui/blob/main/docs/One-Click-Installers.md).
 * The installer has been tested mostly on NVIDIA GPUs. If you can find a way to improve it for your AMD/Intel Arc/Mac Metal GPU, you are highly encouraged to submit a PR to this repository. The main file to be edited is `one_click.py`.
-* For automated installation, you can use the `GPU_CHOICE`, `LAUNCH_AFTER_INSTALL`, and `INSTALL_EXTENSIONS` environment variables. For instance: `GPU_CHOICE=A LAUNCH_AFTER_INSTALL=False INSTALL_EXTENSIONS=False ./start_linux.sh`.
+* For automated installation, you can use the `GPU_CHOICE`, `USE_CUDA118`, `LAUNCH_AFTER_INSTALL`, and `INSTALL_EXTENSIONS` environment variables. For instance: `GPU_CHOICE=A USE_CUDA118=FALSE LAUNCH_AFTER_INSTALL=FALSE INSTALL_EXTENSIONS=FALSE ./start_linux.sh`.
 
 ### Manual installation using Conda
 
@@ -255,8 +255,7 @@ bash Miniconda3.sh
 #### 1. Create a new conda environment
 
 ```
-conda create -n textgen python=3.10
->>>>>>> cf4d89ee653051d6b0cccdb2eaa693354836c2cb
+conda create -n textgen python=3.11
 conda activate textgen
 ```
 
@@ -264,19 +263,19 @@ conda activate textgen
 
 | System | GPU | Command |
 |--------|---------|---------|
-| Linux/WSL | NVIDIA | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118` |
+| Linux/WSL | NVIDIA | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121` |
 | Linux/WSL | CPU only | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu` |
 | Linux | AMD | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6` |
 | MacOS + MPS | Any | `pip3 install torch torchvision torchaudio` |
-| Windows | NVIDIA | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118` |
+| Windows | NVIDIA | `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121` |
 | Windows | CPU only | `pip3 install torch torchvision torchaudio` |
 
-The up-to-date commands can be found here: https://pytorch.org/get-started/locally/. 
+The up-to-date commands can be found here: https://pytorch.org/get-started/locally/.
 
 For NVIDIA, you may also need to manually install the CUDA runtime libraries:
 
 ```
-conda install -y -c "nvidia/label/cuda-11.8.0" cuda-runtime
+conda install -y -c "nvidia/label/cuda-12.1.0" cuda-runtime
 ```
 
 #### 3. Install the web UI
@@ -284,36 +283,56 @@ conda install -y -c "nvidia/label/cuda-11.8.0" cuda-runtime
 ```
 git clone https://github.com/oobabooga/text-generation-webui
 cd text-generation-webui
-pip install -r requirements.txt
+pip install -r <requirements file according to table below>
 ```
 
-#### AMD, Metal, Intel Arc, and CPUs without AVX2
+Requirements file to use:
 
-1) Replace the last command above with
+| GPU | CPU | requirements file to use |
+|--------|---------|---------|
+| NVIDIA | has AVX2 | `requirements.txt` |
+| NVIDIA | no AVX2 | `requirements_noavx2.txt` |
+| AMD | has AVX2 | `requirements_amd.txt` |
+| AMD | no AVX2 | `requirements_amd_noavx2.txt` |
+| CPU only | has AVX2 | `requirements_cpu_only.txt` |
+| CPU only | no AVX2 | `requirements_cpu_only_noavx2.txt` |
+| Apple | Intel | `requirements_apple_intel.txt` |
+| Apple | Apple Silicon | `requirements_apple_silicon.txt` |
 
-```
-pip install -r requirements_nowheels.txt
-```
+##### AMD GPU on Windows
 
-2) Manually install llama-cpp-python using the appropriate command for your hardware: [Installation from PyPI](https://github.com/abetlen/llama-cpp-python#installation-from-pypi).
+1) Use `requirements_cpu_only.txt` or `requirements_cpu_only_noavx2.txt` in the command above.
 
-3) Do the same for CTransformers: [Installation](https://github.com/marella/ctransformers#installation).
+2) Manually install llama-cpp-python using the appropriate command for your hardware: [Installation from PyPI](https://github.com/abetlen/llama-cpp-python#installation-with-hardware-acceleration).
+    * Use the `LLAMA_HIPBLAS=on` toggle.
+    * Note the [Windows remarks](https://github.com/abetlen/llama-cpp-python#windows-remarks).
 
-4) AMD: Manually install AutoGPTQ: [Installation](https://github.com/PanQiWei/AutoGPTQ#installation).
+3) Manually install AutoGPTQ: [Installation](https://github.com/PanQiWei/AutoGPTQ#install-from-source).
+    * Perform the from-source installation - there are no prebuilt ROCm packages for Windows.
 
-5) AMD: Manually install [ExLlama](https://github.com/turboderp/exllama) by simply cloning it into the `repositories` folder (it will be automatically compiled at runtime after that):
+4) Manually install [ExLlama](https://github.com/turboderp/exllama) by simply cloning it into the `repositories` folder (it will be automatically compiled at runtime after that):
 
-```
+```sh
 cd text-generation-webui
 git clone https://github.com/turboderp/exllama repositories/exllama
 ```
 
-#### bitsandbytes on older NVIDIA GPUs
+##### Older NVIDIA GPUs
 
-bitsandbytes >= 0.39 may not work. In that case, to use `--load-in-8bit`, you may have to downgrade like this:
+1) For Kepler GPUs and older, you will need to install CUDA 11.8 instead of 12:
 
-* Linux: `pip install bitsandbytes==0.38.1`
-* Windows: `pip install https://github.com/jllllll/bitsandbytes-windows-webui/raw/main/bitsandbytes-0.38.1-py3-none-any.whl`
+```
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+conda install -y -c "nvidia/label/cuda-11.8.0" cuda-runtime
+```
+
+2) bitsandbytes >= 0.39 may not work. In that case, to use `--load-in-8bit`, you may have to downgrade like this:
+    * Linux: `pip install bitsandbytes==0.38.1`
+    * Windows: `pip install https://github.com/jllllll/bitsandbytes-windows-webui/raw/main/bitsandbytes-0.38.1-py3-none-any.whl`
+
+##### Manual install
+
+The requirments*.txt above contain various precompiled wheels. If you wish to compile things manually, or if you need to because no suitable wheels are available for your hardware, you can use `requirements_nowheels.txt` and then install your desired loaders manually.
 
 ### Alternative: Docker
 
@@ -329,12 +348,12 @@ docker compose up --build
 
 ### Updating the requirements
 
-From time to time, the `requirements.txt` changes. To update, use these commands:
+From time to time, the `requirements*.txt` changes. To update, use these commands:
 
 ```
 conda activate textgen
 cd text-generation-webui
-pip install -r requirements.txt --upgrade
+pip install -r <requirements file that you've used> --upgrade
 ```
 
 ## Downloading models
@@ -408,7 +427,7 @@ When you load this model in default or notebook modes, the "HTML" tab will show 
     cd text-generation-webui
     python server.py
 
-Then browse to 
+Then browse to
 
 `http://localhost:7860/?__theme=dark`
 
