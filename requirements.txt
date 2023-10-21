@@ -42,5 +42,5 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # ctransformers
 ctransformers
 autoawq
-autoawq==0.1.4
+
 
