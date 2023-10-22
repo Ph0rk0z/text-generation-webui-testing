@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from collections import OrderedDict
 from pathlib import Path
@@ -10,7 +11,7 @@ from modules.logging_colors import logger
 # Model variables
 model = None
 tokenizer = None
-model_name = "None"
+model_name = 'None'
 is_seq2seq = False
 model_dirty_from_training = False
 lora_names = []
@@ -59,43 +60,28 @@ settings = {
     'default_extensions': ['gallery'],
 }
 
-
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
-
 parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=54))
 
 # Basic settings
-parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
-parser.add_argument('--chat', action='store_true', help='DEPRECATED')
-parser.add_argument('--multi-user', action='store_true', help='Multi-user mode. Chat histories are not saved or automatically loaded. WARNING: this is highly experimental.')
+parser.add_argument('--multi-user', action='store_true', help='Multi-user mode. Chat histories are not saved or automatically loaded. Warning: this is likely not safe for sharing publicly.')
 parser.add_argument('--character', type=str, help='The name of the character to load in chat mode by default.')
 parser.add_argument('--model', type=str, help='Name of the model to load by default.')
-parser.add_argument('--lora', type=str, nargs="+", help='The list of LoRAs to load. If you want to load more than one LoRA, write the names separated by spaces.')
-parser.add_argument("--model-dir", type=str, default='models/', help="Path to directory with all the models")
-parser.add_argument("--lora-dir", type=str, default='loras/', help="Path to directory with all the loras")
+parser.add_argument('--lora', type=str, nargs='+', help='The list of LoRAs to load. If you want to load more than one LoRA, write the names separated by spaces.')
+parser.add_argument('--model-dir', type=str, default='models/', help='Path to directory with all the models.')
+parser.add_argument('--lora-dir', type=str, default='loras/', help='Path to directory with all the loras.')
 parser.add_argument('--model-menu', action='store_true', help='Show a model menu in the terminal when the web UI is first launched.')
-parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 parser.add_argument('--settings', type=str, help='Load the default interface settings from this yaml file. See settings-template.yaml for an example. If you create a file called settings.yaml, this file will be loaded by default without the need to use the --settings flag.')
-parser.add_argument('--extensions', type=str, nargs="+", help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
+parser.add_argument('--extensions', type=str, nargs='+', help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
 parser.add_argument('--verbose', action='store_true', help='Print the prompts to the terminal.')
-parser.add_argument('--chat-buttons', action='store_true', help='Show buttons on chat tab instead of hover menu.')
+parser.add_argument('--chat-buttons', action='store_true', help='Show buttons on the chat tab instead of a hover menu.')
 
 # Model loader
-parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv')
+parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, exllama_hf, exllamav2_hf, exllama, exllamav2, autogptq, gptq-for-llama, llama.cpp, llamacpp_hf, ctransformers, autoawq.')
 
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
 parser.add_argument('--auto-devices', action='store_true', help='Automatically split the model across the available GPU(s) and CPU.')
-parser.add_argument('--gpu-memory', type=str, nargs="+", help='Maximum GPU memory in GiB to be allocated per GPU. Example: --gpu-memory 10 for a single GPU, --gpu-memory 10 5 for two GPUs. You can also set values in MiB like --gpu-memory 3500MiB.')
+parser.add_argument('--gpu-memory', type=str, nargs='+', help='Maximum GPU memory in GiB to be allocated per GPU. Example: --gpu-memory 10 for a single GPU, --gpu-memory 10 5 for two GPUs. You can also set values in MiB like --gpu-memory 3500MiB.')
 parser.add_argument('--cpu-memory', type=str, help='Maximum CPU memory in GiB to allocate for offloaded weights. Same as above.')
 parser.add_argument('--disk', action='store_true', help='If the model is too large for your GPU(s) and CPU combined, send the remaining layers to the disk.')
 parser.add_argument('--disk-cache-dir', type=str, default="cache", help='Directory to save the disk cache to. Defaults to "cache".')
@@ -115,23 +101,22 @@ parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True w
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
-parser.add_argument('--compute_dtype', type=str, default="float16", help="compute dtype for 4-bit. Valid options: bfloat16, float16, float32.")
-parser.add_argument('--quant_type', type=str, default="nf4", help='quant_type for 4-bit. Valid options: nf4, fp4.')
 parser.add_argument('--use_double_quant', action='store_true', help='use_double_quant for 4-bit.')
+parser.add_argument('--compute_dtype', type=str, default='float16', help='compute dtype for 4-bit. Valid options: bfloat16, float16, float32.')
+parser.add_argument('--quant_type', type=str, default='nf4', help='quant_type for 4-bit. Valid options: nf4, fp4.')
 
 # llama.cpp
+parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--threads', type=int, default=0, help='Number of threads to use.')
 parser.add_argument('--threads-batch', type=int, default=0, help='Number of threads to use for batches/prompt processing.')
+parser.add_argument('--mul_mat_q', action='store_true', help='Activate new mulmat kernels.')
 parser.add_argument('--n_batch', type=int, default=512, help='Maximum number of prompt tokens to batch together when calling llama_eval.')
 parser.add_argument('--numa', action='store_true', help='Enable numa support for multiple processors.')
 parser.add_argument('--main-gpu', type=int, default=0, help='Main GPU to use for CPP.')
 parser.add_argument('--no-mmap', action='store_true', help='Prevent mmap from being used.')
 parser.add_argument('--mlock', action='store_true', help='Force the system to keep the model in RAM.')
-parser.add_argument('--mul_mat_q', action='store_true', help='Activate new mulmat kernels.')
-parser.add_argument('--cache-capacity', type=str, help='Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed.')
 parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layers to offload to the GPU.')
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
-parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
 
 # GPTQ
@@ -153,8 +138,6 @@ parser.add_argument('--triton', action='store_true', help='Enable Triton for Aut
 parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 parser.add_argument('--disable_exllama', action='store_true', help='Disable exllama kernel in AutoGPTQ. Important for older cards.')
-#parser.add_argument('--autogptq-cuda-tweak', action='store_true', help='Use potentially faster CUDA for AutoGPTQ.')
-
 
 # ExLlama
 parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
@@ -173,30 +156,35 @@ parser.add_argument('--rwkv-strategy', type=str, default=None, help='RWKV: The s
 parser.add_argument('--rwkv-cuda-on', action='store_true', help='RWKV: Compile the CUDA kernel for better performance.')
 
 # RoPE
-parser.add_argument('--alpha_value', type=float, default=1, help="Positional embeddings alpha factor for NTK RoPE scaling. Use either this or compress_pos_emb, not both.")
-parser.add_argument('--rope_freq_base', type=int, default=0, help="If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63).")
+parser.add_argument('--alpha_value', type=float, default=1, help='Positional embeddings alpha factor for NTK RoPE scaling. Use either this or compress_pos_emb, not both.')
+parser.add_argument('--rope_freq_base', type=int, default=0, help='If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63).')
 parser.add_argument('--compress_pos_emb', type=int, default=1, help="Positional embeddings compression factor. Should be set to (context length) / (model\'s original context length). Equal to 1/rope_freq_scale.")
 
 # Gradio
 parser.add_argument('--listen', action='store_true', help='Make the web UI reachable from your local network.')
-parser.add_argument('--listen-host', type=str, help='The hostname that the server will use.')
 parser.add_argument('--listen-port', type=int, help='The listening port that the server will use.')
+parser.add_argument('--listen-host', type=str, help='The hostname that the server will use.')
 parser.add_argument('--share', action='store_true', help='Create a public URL. This is useful for running the web UI on Google Colab or similar.')
 parser.add_argument('--auto-launch', action='store_true', default=False, help='Open the web UI in the default browser upon launch.')
-parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
-parser.add_argument("--gradio-auth-path", type=str, help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"', default=None)
-parser.add_argument("--ssl-keyfile", type=str, help='The path to the SSL certificate key file.', default=None)
-parser.add_argument("--ssl-certfile", type=str, help='The path to the SSL certificate cert file.', default=None)
+parser.add_argument('--gradio-auth', type=str, help='Set Gradio authentication password in the format "username:password". Multiple credentials can also be supplied with "u1:p1,u2:p2,u3:p3".', default=None)
+parser.add_argument('--gradio-auth-path', type=str, help='Set the Gradio authentication file path. The file should contain one or more user:password pairs in the same format as above.', default=None)
+parser.add_argument('--ssl-keyfile', type=str, help='The path to the SSL certificate key file.', default=None)
+parser.add_argument('--ssl-certfile', type=str, help='The path to the SSL certificate cert file.', default=None)
 
 # API
 parser.add_argument('--api', action='store_true', help='Enable the API extension.')
-parser.add_argument('--api-blocking-port', type=int, default=5000, help='The listening port for the blocking API.')
-parser.add_argument('--api-streaming-port', type=int, default=5005, help='The listening port for the streaming API.')
 parser.add_argument('--public-api', action='store_true', help='Create a public URL for the API using Cloudfare.')
 parser.add_argument('--public-api-id', type=str, help='Tunnel ID for named Cloudflare Tunnel. Use together with public-api option.', default=None)
+parser.add_argument('--api-blocking-port', type=int, default=5000, help='The listening port for the blocking API.')
+parser.add_argument('--api-streaming-port', type=int, default=5005, help='The listening port for the streaming API.')
 
 # Multimodal
 parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The multimodal pipeline to use. Examples: llava-7b, llava-13b.')
+
+# Deprecated parameters
+parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
+parser.add_argument('--chat', action='store_true', help='DEPRECATED')
+parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
@@ -221,13 +209,14 @@ for k in ['chat', 'notebook', 'no_stream']:
 
 # Security warnings
 if args.trust_remote_code:
-    logger.warning("trust_remote_code is enabled. This is dangerous.")
-if args.share:
-    logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
-if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
-    logger.warning("\nYou are potentially exposing the web UI to the entire internet without any access password.\nYou can create one with the \"--gradio-auth\" flag like this:\n\n--gradio-auth username:password\n\nMake sure to replace username:password with your own.")
-    if args.multi_user:
-        logger.warning("\nThe multi-user mode is highly experimental and should not be shared publicly.")
+    logger.warning('trust_remote_code is enabled. This is dangerous.')
+if not 'COLAB_GPU' in os.environ:
+    if args.share:
+        logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
+    if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
+        logger.warning("\nYou are potentially exposing the web UI to the entire internet without any access password.\nYou can create one with the \"--gradio-auth\" flag like this:\n\n--gradio-auth username:password\n\nMake sure to replace username:password with your own.")
+        if args.multi_user:
+            logger.warning('\nThe multi-user mode is highly experimental and should not be shared publicly.')
 
 
 def fix_loader_name(name):
