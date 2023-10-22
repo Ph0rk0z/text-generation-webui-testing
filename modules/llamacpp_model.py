@@ -82,7 +82,7 @@ class LlamaCppModel:
             'main_gpu': int(shared.args.main_gpu),
             'use_mmap': not shared.args.no_mmap,
             'use_mlock': shared.args.mlock,
-            'mul_mat_q': shared.args.mul_mat_q,
+            'mul_mat_q': not shared.args.no_mul_mat_q,
             'numa': shared.args.numa,
             'n_gpu_layers': shared.args.n_gpu_layers,
             'rope_freq_base': RoPE.get_rope_freq_base(shared.args.alpha_value, shared.args.rope_freq_base),
