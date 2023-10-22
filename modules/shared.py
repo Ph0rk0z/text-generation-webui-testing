@@ -109,7 +109,7 @@ parser.add_argument('--quant_type', type=str, default='nf4', help='quant_type fo
 parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--threads', type=int, default=0, help='Number of threads to use.')
 parser.add_argument('--threads-batch', type=int, default=0, help='Number of threads to use for batches/prompt processing.')
-parser.add_argument('--mul_mat_q', action='store_true', help='Activate new mulmat kernels.')
+parser.add_argument('--no_mul_mat_q', action='store_true', help='Disable the mulmat kernels.')
 parser.add_argument('--n_batch', type=int, default=512, help='Maximum number of prompt tokens to batch together when calling llama_eval.')
 parser.add_argument('--numa', action='store_true', help='Enable numa support for multiple processors.')
 parser.add_argument('--main-gpu', type=int, default=0, help='Main GPU to use for CPP.')
@@ -185,6 +185,7 @@ parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The m
 parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
 parser.add_argument('--chat', action='store_true', help='DEPRECATED')
 parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
+parser.add_argument('--mul_mat_q', action='store_true', help='DEPRECATED')
 
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
@@ -203,7 +204,7 @@ if args.exllama:
     args.loader = 'ExLlama'
 
 # Deprecation warnings
-for k in ['chat', 'notebook', 'no_stream']:
+for k in ['chat', 'notebook', 'no_stream', 'mul_mat_q']:
     if getattr(args, k):
         logger.warning(f'The --{k} flag has been deprecated and will be removed soon. Please remove that flag.')
 
