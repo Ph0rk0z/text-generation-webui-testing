@@ -118,6 +118,7 @@ parser.add_argument('--mlock', action='store_true', help='Force the system to ke
 parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layers to offload to the GPU.')
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
+parser.add_argument('--cache-capacity', type=str, help='Maximum cache capacity (llama-cpp-python). Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed.')
 
 # GPTQ
 parser.add_argument('--gptq-for-llama', action='store_true', help='Classic GPTQ implementation.')
