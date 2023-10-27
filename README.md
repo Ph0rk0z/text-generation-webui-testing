@@ -21,6 +21,13 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+10/27/23
+```
+If loading fails due to flash attention and your system doesn't support it:
+please pip uninstall flash-attn and flash_attn.
+```
+
+
 10/16/23
 ```
 Update exllamav2 to use the new 8bit cache. So far no issues.
