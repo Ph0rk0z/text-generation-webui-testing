@@ -1,4 +1,4 @@
-accelerate==0.23.*
+accelerate==0.24.*
 colorama
 datasets
 einops
@@ -23,7 +23,7 @@ wandb
 git+https://github.com/oobabooga/torch-grammar.git
 
 # bitsandbytes
-bitsandbytes==0.41.1; platform_system != "Windows"
+bitsandbytes; platform_system != "Windows"
 # it is better to install these manually from source on linux.
 https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.1-py3-none-win_amd64.whl; platform_system == "Windows"
 
@@ -42,5 +42,3 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # ctransformers
 ctransformers
 autoawq
-
-

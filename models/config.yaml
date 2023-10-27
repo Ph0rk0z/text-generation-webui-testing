@@ -22,8 +22,6 @@
   model_type: 'replit'
 .*$:
   mode: 'chat'
-.*AWQ:
-  n_batch: 1
 .*(oasst|openassistant-|stablelm-7b-sft-v7-epoch-3):
   instruction_template: 'Open Assistant'
   skip_special_tokens: false

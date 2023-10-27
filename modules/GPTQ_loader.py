@@ -8,6 +8,7 @@ import torch
 import transformers
 import modules.shared as shared
 
+from accelerate.utils import is_xpu_available
 from transformers import AutoConfig, AutoModelForCausalLM
 
 sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/alpaca_lora_4bit")))
@@ -15,8 +16,6 @@ sys.path.insert(0, str(Path("repositories/GPTQ-Merged/src/gptq_llama")))
 #sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
 import modules.shared as shared
 from modules.logging_colors import logger
-
-
 
 #from gptq_llama import llama_inference_offload
 #import llama_inference_offload 
@@ -146,7 +145,6 @@ def finalize_autograd (model):
        wrapper.apply_generate()
 
     print(Style.BRIGHT + Fore.RED + 'Finalizing Autograd Lora:', shared.lora_names)
-
 
 # This function is a replacement for the load_quant function in the
 # GPTQ-for_LLaMa repository. It supports more models and branches.
@@ -369,16 +367,18 @@ def load_quantized(model_name):
         model = _load_quant(str(path_to_model), str(pt_path), shared.args.wbits, shared.args.groupsize, kernel_switch_threshold=threshold)
 
         # accelerate offload (doesn't work properly)
-        if shared.args.gpu_memory or torch.cuda.device_count() > 1:
+        if shared.args.gpu_memory or torch.cuda.device_count() > 1 or (is_xpu_available() and torch.xpu.device_count() > 1):
             device_map = accelerate.infer_auto_device_map(model, max_memory=calculate_device_mem(model), no_split_module_classes=["LlamaDecoderLayer", "GPTJBlock", "OPTDecoderLayer", "GPTNeoXLayer"])
-
             logger.info("Using the following device map for the quantized model:", device_map)
             # https://huggingface.co/docs/accelerate/package_reference/big_modeling#accelerate.dispatch_model
             model = accelerate.dispatch_model(model, device_map=device_map, offload_buffers=True)
 
         # No offload
         elif not shared.args.cpu:
-            model = model.to(torch.device('cuda:0'))
+            if is_xpu_available():
+                model = model.to(torch.device("xpu:0"))
+            else:
+                model = model.to(torch.device('cuda:0'))
 
     
     return model
