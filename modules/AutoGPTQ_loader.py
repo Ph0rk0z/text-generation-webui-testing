@@ -1,10 +1,13 @@
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 from pathlib import Path
 
+
 import torch
 import re
 import json
 import logging
+from accelerate.utils import is_xpu_available
+from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 
 import modules.shared as shared
 from modules.logging_colors import logger
@@ -117,9 +120,13 @@ def load_quantized(model_name):
     if max_memory:
         logger.info(f'max_memory: {max_memory}')
 
-    dev = "cpu" if shared.args.cpu else "cuda:0"  # cpu is not supported for now
 
-    #dev = "cuda"
+    if shared.args.cpu: 
+        dev = "cpu" 
+    elif is_xpu_available():
+        dev = "xpu:0"
+    else:
+        dev = "cuda:0"  
 
     logger.info(f'Loading quantized model with AutoGPTQ from {model_file}')
 
