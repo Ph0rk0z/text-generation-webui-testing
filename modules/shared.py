@@ -95,6 +95,7 @@ parser.add_argument('--xformers', action='store_true', help="Use xformer's memor
 parser.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
 parser.add_argument('--flash-attention', action='store_true', help="Use Flash Attention 2. Compute 7.0 and up Required")
 parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon.")
+parser.add_argument('--force-safetensors', action='store_true', help='Set use_safetensors=True while loading the model. This prevents arbitrary code execution.')
 parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
 parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True while loading a tokenizer.")
@@ -139,6 +140,8 @@ parser.add_argument('--triton', action='store_true', help='Enable Triton for Aut
 parser.add_argument('--autogptq_device_map', type=str, default='auto', help='Device map for AutoGPTQ. e.g. auto')
 parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order or desc_act for AutoGPTQ. Use if you have group size and act order together')
 parser.add_argument('--disable_exllama', action='store_true', help='Disable exllama kernel in AutoGPTQ. Important for older cards.')
+parser.add_argument('--no_flash_attn', action='store_true', help='Force flash-attention to not be used.')
+parser.add_argument('--cache_8bit', action='store_true', help='Use 8-bit cache to save VRAM.')
 
 # ExLlama
 parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
