@@ -2,7 +2,7 @@ accelerate==0.24.*
 colorama
 datasets
 einops
-exllamav2==0.0.6; platform_system != "Darwin" and platform_machine != "x86_64"
+exllamav2==0.0.7; platform_system != "Darwin" and platform_machine != "x86_64"
 gradio==3.50.*
 markdown
 numpy==1.24.*
@@ -42,3 +42,4 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # ctransformers
 ctransformers
 autoawq
+
