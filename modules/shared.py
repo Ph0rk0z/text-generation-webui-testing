@@ -99,6 +99,7 @@ parser.add_argument('--force-safetensors', action='store_true', help='Set use_sa
 parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
 parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True while loading a tokenizer.")
+parser.add_argument('--use_flash_attention_2', action='store_true', help='Transformers Flash Attention 2')
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
