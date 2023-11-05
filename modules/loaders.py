@@ -9,7 +9,6 @@ loaders_and_params = OrderedDict({
     'Transformers': [
         'cpu_memory',
         'gpu_memory',
-        'trust_remote_code',
         'load_in_8bit',
         'threshold',
         'bf16',
@@ -27,6 +26,7 @@ loaders_and_params = OrderedDict({
         'sdp_attention',
         'no_cache',
         'use_fast',
+        'use_flash_attention_2',
         'alpha_value',
         'rope_freq_base',
         'compress_pos_emb',
@@ -87,8 +87,7 @@ loaders_and_params = OrderedDict({
         'gpu_memory',
         'cpu_memory',
         'cpu',
-        'disk',
-        'trust_remote_code',      
+        'disk',     
         'attention_info',
         'flash_attention',
         'xformers',
@@ -189,6 +188,7 @@ loaders_and_params = OrderedDict({
 loaders_samplers = {
     'Transformers': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -225,6 +225,7 @@ loaders_samplers = {
     },
     'ExLlama_HF': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -286,6 +287,7 @@ loaders_samplers = {
     },
     'ExLlamav2_HF': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -318,6 +320,7 @@ loaders_samplers = {
     },
     'AutoGPTQ': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -354,6 +357,7 @@ loaders_samplers = {
     },
     'GPTQ-for-LLaMa': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -406,6 +410,7 @@ loaders_samplers = {
     },
     'llamacpp_HF': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
@@ -445,6 +450,7 @@ loaders_samplers = {
     },
     'AutoAWQ': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
