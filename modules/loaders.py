@@ -45,6 +45,7 @@ loaders_and_params = OrderedDict({
         'compress_pos_emb',
         'cfg_cache',
         'use_fast',
+        'trust_remote_code',
         'exllama_HF_info',
     ],
     'ExLlamav2_HF': [
@@ -56,6 +57,7 @@ loaders_and_params = OrderedDict({
         'alpha_value',
         'compress_pos_emb',
         'use_fast',
+        'trust_remote_code',
     ],
     'ExLlama': [
         'gpu_split',
