@@ -71,14 +71,15 @@ def load_model(model_name, loader=None):
         'AutoAWQ': AutoAWQ_loader,
     }
 
+    metadata = get_model_metadata(model_name)
     if loader is None:
         if shared.args.loader is not None:
             loader = shared.args.loader
         else:
-            loader = get_model_metadata(model_name)['loader']
+            loader = metadata['loader']
             if loader is None:
                 logger.error('The path to the model does not exist. Exiting.')
-                return None, None
+                raise ValueError
 
     shared.args.loader = loader
     output = load_func_map[loader](model_name)
@@ -95,6 +96,7 @@ def load_model(model_name, loader=None):
     if any((shared.args.xformers, shared.args.sdp_attention, shared.args.flash_attention)) and shared.args.loader not in ['ExLlama', 'ExLlama_HF', 'llama.cpp', 'llamacpp_HF']:
         llama_attn_hijack.hijack_llama_attention()
 
+    shared.settings.update({k: v for k, v in metadata.items() if k in shared.settings})
     logger.info(f"Loaded the model in {(time.time()-t0):.2f} seconds.")
     return model, tokenizer
 
