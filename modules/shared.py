@@ -39,22 +39,23 @@ settings = {
     'max_new_tokens': 200,
     'max_new_tokens_min': 1,
     'max_new_tokens_max': 16384,
-    'seed': -1,
     'negative_prompt': '',
+    'seed': -1,
     'truncation_length': 2048,
     'truncation_length_min': 0,
     'truncation_length_max': 32768,
-    'custom_stopping_strings': '',
-    'auto_max_new_tokens': False,
     'max_tokens_second': 0,
-    'ban_eos_token': False,
+    'custom_stopping_strings': '',
     'custom_token_bans': '',
+    'auto_max_new_tokens': False,
+    'ban_eos_token': False,
     'add_bos_token': True,
     'skip_special_tokens': True,
     'stream': True,
-    'name1': 'User',
     'character': 'Assistant',
+    'name1': 'User',
     'instruction_template': 'Alpaca',
+    'custom_system_message': '',
     'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
     'autoload_model': False,
     'default_extensions': ['gallery'],
@@ -113,13 +114,14 @@ parser.add_argument('--threads', type=int, default=0, help='Number of threads to
 parser.add_argument('--threads-batch', type=int, default=0, help='Number of threads to use for batches/prompt processing.')
 parser.add_argument('--no_mul_mat_q', action='store_true', help='Disable the mulmat kernels.')
 parser.add_argument('--n_batch', type=int, default=512, help='Maximum number of prompt tokens to batch together when calling llama_eval.')
-parser.add_argument('--numa', action='store_true', help='Enable numa support for multiple processors.')
 parser.add_argument('--main-gpu', type=int, default=0, help='Main GPU to use for CPP.')
 parser.add_argument('--no-mmap', action='store_true', help='Prevent mmap from being used.')
 parser.add_argument('--mlock', action='store_true', help='Force the system to keep the model in RAM.')
 parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layers to offload to the GPU.')
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
 parser.add_argument('--llama_cpp_seed', type=int, default=0, help='Seed for llama-cpp models. Default 0 (random)')
+parser.add_argument('--numa', action='store_true', help='Enable numa support for multiple processors.')
+parser.add_argument('--logits_all', action='store_true', help='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
 parser.add_argument('--cache-capacity', type=str, help='Maximum cache capacity (llama-cpp-python). Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed.')
 
 # GPTQ
@@ -180,8 +182,8 @@ parser.add_argument('--ssl-certfile', type=str, help='The path to the SSL certif
 parser.add_argument('--api', action='store_true', help='Enable the API extension.')
 parser.add_argument('--public-api', action='store_true', help='Create a public URL for the API using Cloudfare.')
 parser.add_argument('--public-api-id', type=str, help='Tunnel ID for named Cloudflare Tunnel. Use together with public-api option.', default=None)
-parser.add_argument('--api-blocking-port', type=int, default=5000, help='The listening port for the blocking API.')
-parser.add_argument('--api-streaming-port', type=int, default=5005, help='The listening port for the streaming API.')
+parser.add_argument('--api-port', type=int, default=5000, help='The listening port for the API.')
+parser.add_argument('--api-key', type=str, default='', help='API authentication key.')
 
 # Multimodal
 parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The multimodal pipeline to use. Examples: llava-7b, llava-13b.')
@@ -191,6 +193,8 @@ parser.add_argument('--notebook', action='store_true', help='DEPRECATED')
 parser.add_argument('--chat', action='store_true', help='DEPRECATED')
 parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 parser.add_argument('--mul_mat_q', action='store_true', help='DEPRECATED')
+parser.add_argument('--api-blocking-port', type=int, default=5000, help='DEPRECATED')
+parser.add_argument('--api-streaming-port', type=int, default=5005, help='DEPRECATED')
 
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
@@ -254,10 +258,13 @@ def fix_loader_name(name):
         return 'AutoAWQ'
 
 
-def add_extension(name):
+def add_extension(name, last=False):
     if args.extensions is None:
         args.extensions = [name]
-    elif 'api' not in args.extensions:
+    elif last:
+        args.extensions = [x for x in args.extensions if x != name]
+        args.extensions.append(name)
+    elif name not in args.extensions:
         args.extensions.append(name)
 
 
@@ -267,13 +274,14 @@ def is_chat():
 
 args.loader = fix_loader_name(args.loader)
 
-# Activate the API extension
-if args.api or args.public_api:
-    add_extension('api')
-
 # Activate the multimodal extension
 if args.multimodal_pipeline is not None:
     add_extension('multimodal')
+
+# Activate the API extension
+if args.api:
+    # add_extension('openai', last=True)
+    add_extension('api', last=True)
 
 # Load model-specific settings
 with Path(f'{args.model_dir}/config.yaml') as p:
