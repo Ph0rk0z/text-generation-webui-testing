@@ -99,8 +99,8 @@ parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_
 parser.add_argument('--force-safetensors', action='store_true', help='Set use_safetensors=True while loading the model. This prevents arbitrary code execution.')
 parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
-parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True while loading a tokenizer.")
 parser.add_argument('--use_flash_attention_2', action='store_true', help='Transformers Flash Attention 2')
+parser.add_argument('--no_use_fast', action='store_true', help='Set use_fast=False while loading the tokenizer (it\'s True by default). Use this if you have any problems related to use_fast.')
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
@@ -195,6 +195,7 @@ parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 parser.add_argument('--mul_mat_q', action='store_true', help='DEPRECATED')
 parser.add_argument('--api-blocking-port', type=int, default=5000, help='DEPRECATED')
 parser.add_argument('--api-streaming-port', type=int, default=5005, help='DEPRECATED')
+parser.add_argument('--use_fast', action='store_true', help='DEPRECATED')
 
 args = parser.parse_args()
 args_defaults = parser.parse_args([])
@@ -213,7 +214,7 @@ if args.exllama:
     args.loader = 'ExLlama'
 
 # Deprecation warnings
-for k in ['chat', 'notebook', 'no_stream', 'mul_mat_q']:
+for k in ['notebook', 'chat', 'no_stream', 'mul_mat_q', 'use_fast']:
     if getattr(args, k):
         logger.warning(f'The --{k} flag has been deprecated and will be removed soon. Please remove that flag.')
 
@@ -279,9 +280,8 @@ if args.multimodal_pipeline is not None:
     add_extension('multimodal')
 
 # Activate the API extension
-if args.api:
-    # add_extension('openai', last=True)
-    add_extension('api', last=True)
+if args.api or args.public_api:
+    add_extension('openai', last=True)
 
 # Load model-specific settings
 with Path(f'{args.model_dir}/config.yaml') as p:

@@ -25,7 +25,7 @@ loaders_and_params = OrderedDict({
         'xformers',
         'sdp_attention',
         'no_cache',
-        'use_fast',
+        'no_use_fast',
         'use_flash_attention_2',
         'alpha_value',
         'rope_freq_base',
@@ -44,8 +44,8 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'cfg_cache',
-        'use_fast',
         'trust_remote_code',
+        'no_use_fast',
         'exllama_HF_info',
     ],
     'ExLlamav2_HF': [
@@ -56,8 +56,8 @@ loaders_and_params = OrderedDict({
         'cache_8bit',
         'alpha_value',
         'compress_pos_emb',
-        'use_fast',
         'trust_remote_code',
+        'no_use_fast',
     ],
     'ExLlama': [
         'gpu_split',
@@ -98,7 +98,7 @@ loaders_and_params = OrderedDict({
         'no_cache',
         'auto_devices',
         'trust_remote_code',
-        'use_fast',
+        'no_use_fast',
         'autogptq_info',
     ],
     'GPTQ-for-LLaMa': [
@@ -120,7 +120,7 @@ loaders_and_params = OrderedDict({
         'no_cache',
         'alpha_value',
         'compress_pos_emb',
-        'use_fast',
+        'no_use_fast',
         'gptq_for_llama_info',
     ],
     'llama.cpp': [
@@ -161,7 +161,7 @@ loaders_and_params = OrderedDict({
         'cpu',
         'numa',
         'cfg_cache',
-        'use_fast',
+        'no_use_fast',
         'logits_all',
         'llamacpp_HF_info',
     ],
@@ -184,7 +184,7 @@ loaders_and_params = OrderedDict({
         'xformers',
         'sdp_attention',
         'trust_remote_code',
-        'use_fast',
+        'no_use_fast',
     ]
 })
 
@@ -277,11 +277,16 @@ loaders_samplers = {
     'ExLlamav2': {
         'temperature',
         'top_p',
+        'min_p',
         'top_k',
         'typical_p',
+        'tfs',
         'repetition_penalty',
         'repetition_penalty_range',
         'seed',
+        'mirostat_mode',
+        'mirostat_tau',
+        'mirostat_eta',
         'ban_eos_token',
         'add_bos_token',
         'custom_token_bans',
