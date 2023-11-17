@@ -99,10 +99,8 @@ parser.add_argument('--trust-remote-code', action='store_true', help="Set trust_
 parser.add_argument('--force-safetensors', action='store_true', help='Set use_safetensors=True while loading the model. This prevents arbitrary code execution.')
 parser.add_argument('--quant_attn', action='store_true', help='(Exllama/Autograd/GPTQ-triton/cuda-autogptq) Enable Fused Attention.')
 parser.add_argument('--fused_mlp', action='store_true', help='(Exllama/Autograd/AutoGPTQ-triton) Enable Fused MLP.')
-parser.add_argument('--use_fast', action='store_true', help="Set use_fast=True while loading a tokenizer.")
 parser.add_argument('--use_flash_attention_2', action='store_true', help='Transformers Flash Attention 2')
 parser.add_argument('--no_use_fast', action='store_true', help='Set use_fast=False while loading the tokenizer (it\'s True by default). Use this if you have any problems related to use_fast.')
-f
 
 # Accelerate 4-bit
 parser.add_argument('--load-in-4bit', action='store_true', help='Load the model with 4-bit precision (using bitsandbytes).')
