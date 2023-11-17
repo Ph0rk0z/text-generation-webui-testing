@@ -485,8 +485,12 @@ Optionally, you can use the following command-line flags:
 | `--flash-attention`                         | Use Flash Attention 2. This drastically reduces the VRAM cost |
 | `--use_flash_attention_2`                   | Set use_flash_attention_2=True while loading the transformers model. |
 | `--trust-remote-code`                       | Set trust_remote_code=True while loading a model. Necessary for ChatGLM and Falcon. |
-| `--use_fast`                                | Set use_fast=True while loading a tokenizer. |
-
+| `--no-cache`                                | Set `use_cache` to `False` while generating text. This reduces VRAM usage slightly, but it comes at a performance cost. |
+| `--xformers`                                | Use xformer's memory efficient attention. This is really old and probably doesn't do anything. |
+| `--sdp-attention`                           | Use PyTorch 2.0's SDP attention. Same as above. |
+| `--trust-remote-code`                       | Set `trust_remote_code=True` while loading the model. Necessary for some models. |
+| `--no_use_fast`                             | Set use_fast=False while loading the tokenizer (it's True by default). Use this if you have any problems related to use_fast. |
+| `--use_flash_attention_2`                   | Set use_flash_attention_2=True while loading the model. |
 
 #### Accelerate 4-bit
 
