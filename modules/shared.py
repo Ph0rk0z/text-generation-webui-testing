@@ -183,6 +183,8 @@ parser.add_argument('--public-api', action='store_true', help='Create a public U
 parser.add_argument('--public-api-id', type=str, help='Tunnel ID for named Cloudflare Tunnel. Use together with public-api option.', default=None)
 parser.add_argument('--api-port', type=int, default=5000, help='The listening port for the API.')
 parser.add_argument('--api-key', type=str, default='', help='API authentication key.')
+parser.add_argument('--admin-key', type=str, default='', help='API authentication key for admin tasks like loading and unloading models. If not set, will be the same as --api-key.')
+parser.add_argument('--nowebui', action='store_true', help='Do not launch the Gradio UI. Useful for launching the API in standalone mode.')
 
 # Multimodal
 parser.add_argument('--multimodal-pipeline', type=str, default=None, help='The multimodal pipeline to use. Examples: llava-7b, llava-13b.')
@@ -194,6 +196,7 @@ parser.add_argument('--no-stream', action='store_true', help='DEPRECATED')
 parser.add_argument('--mul_mat_q', action='store_true', help='DEPRECATED')
 parser.add_argument('--api-blocking-port', type=int, default=5000, help='DEPRECATED')
 parser.add_argument('--api-streaming-port', type=int, default=5005, help='DEPRECATED')
+parser.add_argument('--llama_cpp_seed', type=int, default=0, help='DEPRECATED')
 parser.add_argument('--use_fast', action='store_true', help='DEPRECATED')
 
 args = parser.parse_args()
@@ -220,7 +223,7 @@ for k in ['notebook', 'chat', 'no_stream', 'mul_mat_q', 'use_fast']:
 # Security warnings
 if args.trust_remote_code:
     logger.warning('trust_remote_code is enabled. This is dangerous.')
-if 'COLAB_GPU' not in os.environ:
+if 'COLAB_GPU' not in os.environ and not args.nowebui:
     if args.share:
         logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
     if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
