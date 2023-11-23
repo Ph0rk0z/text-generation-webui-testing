@@ -399,7 +399,9 @@ loaders_samplers = {
     'llama.cpp': {
         'temperature',
         'top_p',
+        'min_p',
         'top_k',
+        'typical_p',
         'tfs',
         'repetition_penalty',
         'presence_penalty',
