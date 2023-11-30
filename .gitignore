@@ -32,9 +32,10 @@
 .DS_Store
 .eslintrc.js
 .idea
-.env
 .venv
 venv
+.envrc
+.direnv
 .vscode
 *.bak
 *.ipynb
@@ -46,3 +47,10 @@ package.json
 package-lock.json
 Thumbs.db
 wandb
+
+# ignore user docker config and top level links to docker files
+/docker-compose.yaml
+/docker-compose.yml
+/Dockerfile
+.env
+
