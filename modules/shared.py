@@ -36,14 +36,14 @@ settings = {
     'prompt-default': 'QA',
     'prompt-notebook': 'QA',
     'preset': 'simple-1',
-    'max_new_tokens': 200,
+    'max_new_tokens': 512,
     'max_new_tokens_min': 1,
     'max_new_tokens_max': 16384,
     'negative_prompt': '',
     'seed': -1,
     'truncation_length': 2048,
     'truncation_length_min': 0,
-    'truncation_length_max': 32768,
+    'truncation_length_max': 200000,
     'max_tokens_second': 0,
     'custom_stopping_strings': '',
     'custom_token_bans': '',
@@ -53,11 +53,19 @@ settings = {
     'skip_special_tokens': True,
     'stream': True,
     'character': 'Assistant',
+<<<<<<< HEAD
     'name1': 'User',
     'instruction_template': 'Alpaca',
+=======
+    'name1': 'You',
+>>>>>>> 7be09836fc721e6f23cf1cc27523c92185b20d8a
     'custom_system_message': '',
+    'instruction_template_str': "{%- set found_item = false -%}\n{%- for message in messages -%}\n    {%- if message['role'] == 'system' -%}\n        {%- set found_item = true -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if not found_item -%}\n    {{- '' + 'Below is an instruction that describes a task. Write a response that appropriately completes the request.' + '\\n\\n' -}}\n{%- endif %}\n{%- for message in messages %}\n    {%- if message['role'] == 'system' -%}\n        {{- '' + message['content'] + '\\n\\n' -}}\n    {%- else -%}\n        {%- if message['role'] == 'user' -%}\n            {{-'### Instruction:\\n' + message['content'] + '\\n\\n'-}}\n        {%- else -%}\n            {{-'### Response:\\n' + message['content'] + '\\n\\n' -}}\n        {%- endif -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if add_generation_prompt -%}\n    {{-'### Response:\\n'-}}\n{%- endif -%}",
+    'chat_template_str': "{%- for message in messages %}\n    {%- if message['role'] == 'system' -%}\n        {{- message['content'] + '\\n\\n' -}}\n    {%- else -%}\n        {%- if message['role'] == 'user' -%}\n            {{- name1 + ': ' + message['content'] + '\\n'-}}\n        {%- else -%}\n            {{- name2 + ': ' + message['content'] + '\\n' -}}\n        {%- endif -%}\n    {%- endif -%}\n{%- endfor -%}",
     'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
     'autoload_model': False,
+    'gallery-items_per_page': 50,
+    'gallery-open': False,
     'default_extensions': ['gallery'],
 }
 
@@ -77,7 +85,7 @@ parser.add_argument('--verbose', action='store_true', help='Print the prompts to
 parser.add_argument('--chat-buttons', action='store_true', help='Show buttons on the chat tab instead of a hover menu.')
 
 # Model loader
-parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, exllama_hf, exllamav2_hf, exllama, exllamav2, autogptq, gptq-for-llama, llama.cpp, llamacpp_hf, ctransformers, autoawq.')
+parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: Transformers, llama.cpp, llamacpp_HF, ExLlama_HF, ExLlamav2_HF, AutoGPTQ, AutoAWQ, GPTQ-for-LLaMa, ExLlama, ExLlamav2, ctransformers, QuIP#.')
 
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
@@ -144,6 +152,8 @@ parser.add_argument('--autogptq_act_order', action='store_true', help='Act-order
 parser.add_argument('--disable_exllama', action='store_true', help='Disable exllama kernel in AutoGPTQ. Important for older cards.')
 parser.add_argument('--no_flash_attn', action='store_true', help='Force flash-attention to not be used.')
 parser.add_argument('--cache_8bit', action='store_true', help='Use 8-bit cache to save VRAM.')
+parser.add_argument('--num_experts_per_token', type=int, default=2, help='Number of experts to use for generation. Applies to MoE models like Mixtral.')
+parser.add_argument('--disable_exllamav2', action='store_true', help='Disable ExLlamav2 kernel.')
 
 # ExLlama
 parser.add_argument('--exllama', action='store_true', help='Use exllama to load the model.')
@@ -260,6 +270,8 @@ def fix_loader_name(name):
         return 'ctransformers'
     elif name in ['autoawq', 'awq', 'auto-awq']:
         return 'AutoAWQ'
+    elif name in ['quip#', 'quip-sharp', 'quipsharp', 'quip_sharp']:
+        return 'QuIP#'
 
 
 def add_extension(name, last=False):

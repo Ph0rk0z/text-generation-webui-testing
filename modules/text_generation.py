@@ -18,7 +18,8 @@ from modules.callbacks import (
     _StopEverythingStoppingCriteria
 )
 from modules.extensions import apply_extensions
-from modules.grammar import GrammarLogitsProcessor
+from modules.grammar.grammar_utils import initialize_grammar
+from modules.grammar.logits_process import GrammarConstrainedLogitsProcessor
 from modules.html_generator import generate_4chan_html, generate_basic_html
 from modules.logging_colors import logger
 from modules.models import clear_torch_cache, local_rank
@@ -33,7 +34,7 @@ def generate_reply(*args, **kwargs):
         shared.generation_lock.release()
 
 
-def _generate_reply(question, state, stopping_strings=None, is_chat=False, escape_html=False):
+def _generate_reply(question, state, stopping_strings=None, is_chat=False, escape_html=False, for_ui=False):
 
     # Find the appropriate generation function
     generate_func = apply_extensions('custom_generate_reply')
@@ -93,9 +94,11 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False, escap
                 last_update = time.time()
                 yield reply
 
-            # Limit updates to 24 per second to not stress low latency networks
+            # Limit updates to 24 or 5 per second to avoid lag in the Gradio UI
+            # API updates are not limited
             else:
-                if cur_time - last_update > 0.041666666666666664:
+                min_update_interval = 0 if not for_ui else 0.2 if (shared.args.listen or shared.args.share) else 0.0417
+                if cur_time - last_update > min_update_interval:
                     last_update = cur_time
                     yield reply
 
@@ -118,10 +121,9 @@ def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_lengt
             input_ids = np.array(input_ids).reshape(1, len(input_ids))
     else:
         input_ids = shared.tokenizer.encode(str(prompt), return_tensors='pt', add_special_tokens=add_special_tokens)
-
-        # This is a hack for making replies more creative.
-        if not add_bos_token and input_ids[0][0] == shared.tokenizer.bos_token_id:
-            input_ids = input_ids[:, 1:]
+        if not add_bos_token:
+            while len(input_ids[0]) > 0 and input_ids[0][0] == shared.tokenizer.bos_token_id:
+                input_ids = input_ids[:, 1:]
 
     # Handling truncation
     if truncation_length is not None:
@@ -177,7 +179,7 @@ def generate_reply_wrapper(question, state, stopping_strings=None):
     reply = question if not shared.is_seq2seq else ''
     yield formatted_outputs(reply, shared.model_name)
 
-    for reply in generate_reply(question, state, stopping_strings, is_chat=False, escape_html=True):
+    for reply in generate_reply(question, state, stopping_strings, is_chat=False, escape_html=True, for_ui=True):
         if not shared.is_seq2seq:
             reply = question + reply
 
@@ -218,20 +220,6 @@ def fix_galactica(s):
     return s
 
 
-def get_reply_from_output_ids(output_ids, input_ids, original_question, state, is_chat=False):
-    if shared.is_seq2seq:
-        reply = decode(output_ids, state['skip_special_tokens'])
-    else:
-        new_tokens = len(output_ids) - len(input_ids[0])
-        reply = decode(output_ids[-new_tokens:], state['skip_special_tokens'])
-        # Prevent LlamaTokenizer from skipping a space
-        if type(shared.tokenizer) in [transformers.LlamaTokenizer, transformers.LlamaTokenizerFast] and len(output_ids) > 0:
-            if shared.tokenizer.convert_ids_to_tokens(int(output_ids[-new_tokens])).startswith('▁'):
-                reply = ' ' + reply
-
-    return reply
-
-
 def set_manual_seed(seed):
     seed = int(seed)
     if seed == -1:
@@ -242,6 +230,7 @@ def set_manual_seed(seed):
         torch.cuda.manual_seed_all(seed)
     elif is_torch_xpu_available():
         torch.xpu.manual_seed_all(seed)
+
     return seed
 
 
@@ -272,6 +261,14 @@ def apply_stopping_strings(reply, all_stop_strings):
             break
 
     return reply, stop_found
+
+
+def get_reply_from_output_ids(output_ids, state, starting_from=0):
+    reply = decode(output_ids[starting_from:], state['skip_special_tokens'])
+    if hasattr(shared.tokenizer, 'convert_ids_to_tokens') and len(output_ids) > starting_from and shared.tokenizer.convert_ids_to_tokens(int(output_ids[starting_from])).startswith('▁'):
+        reply = ' ' + reply
+
+    return reply
 
 
 def generate_reply_HF(question, original_question, seed, state, stopping_strings=None, is_chat=False):
@@ -321,11 +318,17 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
     generate_params['stopping_criteria'] = transformers.StoppingCriteriaList()
     generate_params['stopping_criteria'].append(_StopEverythingStoppingCriteria())
 
+    # Logits processor
     processor = state.get('logits_processor', LogitsProcessorList([]))
-    # In case a processor is passed by itself.
     if not isinstance(processor, LogitsProcessorList):
         processor = LogitsProcessorList([processor])
-    processor.append(GrammarLogitsProcessor(state['grammar_string']))
+
+    # Grammar
+    if state['grammar_string'].strip() != '':
+        grammar = initialize_grammar(state['grammar_string'])
+        grammar_processor = GrammarConstrainedLogitsProcessor(grammar)
+        processor.append(grammar_processor)
+
     apply_extensions('logits_processor', processor, input_ids)
     generate_params['logits_processor'] = processor
 
@@ -341,7 +344,8 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
                 if cuda:
                     output = output.cuda()
 
-            yield get_reply_from_output_ids(output, input_ids, original_question, state, is_chat=is_chat)
+            starting_from = 0 if shared.is_seq2seq else len(input_ids[0])
+            yield get_reply_from_output_ids(output, state, starting_from=starting_from)
 
         # Stream the reply 1 token at a time.
         # This is based on the trick of using 'stopping_criteria' to create an iterator.
@@ -357,11 +361,20 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
                 return Iteratorize(generate_with_callback, [], kwargs, callback=None)
 
             with generate_with_streaming(**generate_params) as generator:
+                cumulative_reply = ''
+                starting_from = 0 if shared.is_seq2seq else len(input_ids[0])
                 for output in generator:
                     if output[-1] in eos_token_ids:
                         break
 
-                    yield get_reply_from_output_ids(output, input_ids, original_question, state, is_chat=is_chat)
+                    new_content = get_reply_from_output_ids(output, state, starting_from=starting_from)
+                    # check the partial unicode character
+                    if chr(0xfffd) in new_content:
+                        continue
+
+                    cumulative_reply += new_content
+                    starting_from = len(output)
+                    yield cumulative_reply
 
     except Exception:
         traceback.print_exc()

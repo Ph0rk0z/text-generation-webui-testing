@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from modules import loaders, metadata_gguf, shared, ui
+from modules import chat, loaders, metadata_gguf, shared, ui
 
 
 def get_fallback_settings():
@@ -33,14 +33,23 @@ def get_model_metadata(model):
             for k in settings[pat]:
                 model_settings[k] = settings[pat][k]
 
+    path = Path(f'{shared.args.model_dir}/{model}/config.json')
+    if path.exists():
+        hf_metadata = json.loads(open(path, 'r').read())
+    else:
+        hf_metadata = None
+
     if 'loader' not in model_settings:
-        loader = infer_loader(model, model_settings)
-        if 'wbits' in model_settings and type(model_settings['wbits']) is int and model_settings['wbits'] > 0:
-            loader = 'AutoGPTQ'
+        if hf_metadata is not None and 'quip_params' in hf_metadata:
+            model_settings['loader'] = 'QuIP#'
+        else:
+            loader = infer_loader(model, model_settings)
+            if 'wbits' in model_settings and type(model_settings['wbits']) is int and model_settings['wbits'] > 0:
+                loader = 'AutoGPTQ'
 
-        model_settings['loader'] = loader
+            model_settings['loader'] = loader
 
-    # Read GGUF metadata
+    # GGUF metadata
     if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF', 'ctransformers']:
         path = Path(f'{shared.args.model_dir}/{model}')
         if path.is_file():
@@ -57,9 +66,8 @@ def get_model_metadata(model):
             model_settings['rope_freq_base'] = metadata['llama.rope.freq_base']
 
     else:
-        # Read transformers metadata
-        path = Path(f'{shared.args.model_dir}/{model}/config.json')
-        if path.exists():
+        # Transformers metadata
+        if hf_metadata is not None:
             metadata = json.loads(open(path, 'r').read())
             if 'max_position_embeddings' in metadata:
                 model_settings['truncation_length'] = metadata['max_position_embeddings']
@@ -90,6 +98,31 @@ def get_model_metadata(model):
                 model_settings['groupsize'] = metadata['group_size']
             if 'desc_act' in metadata:
                 model_settings['desc_act'] = metadata['desc_act']
+
+    # Try to find the Jinja instruct template
+    path = Path(f'{shared.args.model_dir}/{model}') / 'tokenizer_config.json'
+    if path.exists():
+        metadata = json.loads(open(path, 'r').read())
+        if 'chat_template' in metadata:
+            template = metadata['chat_template']
+            for k in ['eos_token', 'bos_token']:
+                if k in metadata:
+                    value = metadata[k]
+                    if type(value) is dict:
+                        value = value['content']
+
+                    template = template.replace(k, "'{}'".format(value))
+
+            template = re.sub(r'raise_exception\([^)]*\)', "''", template)
+
+            model_settings['instruction_template'] = 'Custom (obtained from model metadata)'
+            model_settings['instruction_template_str'] = template
+
+    if 'instruction_template' not in model_settings:
+        model_settings['instruction_template'] = 'Alpaca'
+
+    if model_settings['instruction_template'] != 'Custom (obtained from model metadata)':
+        model_settings['instruction_template_str'] = chat.load_instruction_template(model_settings['instruction_template'])
 
     # Ignore rope_freq_base if set to the default value
     if 'rope_freq_base' in model_settings and model_settings['rope_freq_base'] == 10000:
