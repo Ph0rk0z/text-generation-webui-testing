@@ -98,6 +98,7 @@ loaders_and_params = OrderedDict({
         'cfg_cache',
         'trust_remote_code',
         'no_use_fast',
+        'exllama_HF_info',
     ],
     'AutoGPTQ': [
         'triton',
