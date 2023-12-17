@@ -58,7 +58,7 @@ def create_ui():
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
-                            shared.gradio['model_menu'] = gr.Dropdown(choices=utils.get_available_models(), value=shared.model_name, label='Model', elem_classes='slim-dropdown', interactive=not mu)
+                            shared.gradio['model_menu'] = gr.Dropdown(choices=utils.get_available_models(), value=lambda: shared.model_name, label='Model', elem_classes='slim-dropdown', interactive=not mu)
                             ui.create_refresh_button(shared.gradio['model_menu'], lambda: None, lambda: {'choices': utils.get_available_models()}, 'refresh-button', interactive=not mu)
                             shared.gradio['load_model'] = gr.Button("Load", visible=not shared.settings['autoload_model'], elem_classes='refresh-button', interactive=not mu)
                             shared.gradio['unload_model'] = gr.Button("Unload", elem_classes='refresh-button', interactive=not mu)
@@ -140,6 +140,7 @@ def create_ui():
                             shared.gradio['triton'] = gr.Checkbox(label="triton", value=shared.args.triton, info='Autogptq Triton Backend')
                             shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Enable act_order and groupsize together')
                             shared.gradio['disable_exllama'] = gr.Checkbox(label="disable_exllama", value=shared.args.warmup_autotune, info='Disable exllama kernel. Use for P40/P6000')
+                            shared.gradio['disable_exllamav2'] = gr.Checkbox(label="disable_exllamav2", value=shared.args.disable_exllamav2, info='Disable ExLlamav2 kernel.')
                             shared.gradio['warmup_autotune'] = gr.Checkbox(label="warmup_autotune", value=shared.args.warmup_autotune, info='Enable warmup autotune if using triton')
 
                         # Attention Hijacks
@@ -162,6 +163,7 @@ def create_ui():
                             shared.gradio['cfg_cache'] = gr.Checkbox(label="cfg-cache", value=shared.args.cfg_cache, info='Create an additional cache for CFG negative prompts.')
                             shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
                             shared.gradio['logits_all'] = gr.Checkbox(label="logits_all", value=shared.args.logits_all, info='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
+                            shared.gradio['num_experts_per_token'] = gr.Number(label="Number of experts per token", value=shared.args.num_experts_per_token, info='Only applies to MoE models like Mixtral.')
 
                         # Security
                             shared.gradio['trust_remote_code'] = gr.Checkbox(label="trust-remote-code", value=shared.args.trust_remote_code, info='To enable this option, start the web UI with the --trust-remote-code flag. It is necessary for some models.')
@@ -171,6 +173,7 @@ def create_ui():
                         # Infos
                             shared.gradio['gptq_for_llama_info'] = gr.Markdown('GPTQ-for-LLaMa. The original GPTQ. Can be used with Autograd for 4-bit lora and sometimes faster inference. Also lora training in 4bits')
                             shared.gradio['exllama_info'] = gr.Markdown('ExLlama has to be installed manually. It is the fastest inference implementation.')
+                            shared.gradio['exllamav2_info'] = gr.Markdown("ExLlamav2_HF is recommended over ExLlamav2 for better integration with extensions and more consistent sampling behavior across loaders.")
                             shared.gradio['exllama_HF_info'] = gr.Markdown('ExLlama_HF is a wrapper that lets you use ExLlama like a Transformers model, which means it can use the Transformers samplers.')
                             shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
                             shared.gradio['autogptq_info'] = gr.Markdown('AutoGPTQ supports GPTQ quantized models of various types.')
@@ -245,10 +248,9 @@ def load_model_wrapper(selected_model, loader, autoload=False):
     else:
         try:
             yield f"Loading `{selected_model}`..."
-            shared.model_name = selected_model
             unload_model()
             if selected_model != '':
-                shared.model, shared.tokenizer = load_model(shared.model_name, loader)
+                shared.model, shared.tokenizer = load_model(selected_model, loader)
 
             if shared.model is not None:
                 output = f"Successfully loaded `{selected_model}`."

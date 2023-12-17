@@ -148,10 +148,11 @@ def load_quantized(model_name):
                                                    use_cuda_fp16=False,
                                                    warmup_triton=shared.args.warmup_autotune,
                                                    disable_exllama=shared.args.disable_exllama,
-                                                   disable_exllamav2=True)
+                                                   disable_exllamav2=shared.args.disable_exllamav2)
     except ValueError:
         logger.error('Could not load model.')
         raise Exception('Could not load model. ')
+
 
     # These lines fix the multimodal extension when used with AutoGPTQ
     if hasattr(model, 'model'):
