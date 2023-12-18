@@ -40,7 +40,7 @@
   instruction_template: 'LLaVA'
   custom_stopping_strings: '"\n###"'
 .*llava.*1.5:
-  instruction_template: 'LLaVA-v1'
+  instruction_template: 'Vicuna-v1.1'
 .*wizard.*mega:
   instruction_template: 'Wizard-Mega'
   custom_stopping_strings: '"</s>"'
@@ -110,7 +110,7 @@
 .*bactrian:
   instruction_template: 'Bactrian'
 .*(h2ogpt-oig-|h2ogpt-oasst1-|h2ogpt-research-oasst1-):
-  instruction_template: 'H2O-human_bot'
+  instruction_template: 'INCITE-Chat'
 .*h2ogpt-gm-:
   instruction_template: 'H2O-prompt_answer'
 .*manticore:
@@ -130,7 +130,7 @@
 .*lazarus:
   instruction_template: 'Alpaca'
 .*guanaco-.*(7|13|33|65)b:
-  instruction_template: 'Guanaco'
+  instruction_template: 'Vicuna-v0'
 .*hypermantis:
   instruction_template: 'Alpaca'
 .*open-llama-.*-open-instruct:
@@ -146,7 +146,7 @@
 .*wizardcoder:
   instruction_template: 'Alpaca'
 .*minotaur:
-  instruction_template: 'Minotaur'
+  instruction_template: 'Manticore Chat'
 .*orca_mini:
   instruction_template: 'Orca Mini'
 .*(platypus|gplatty|superplatty):
@@ -187,4 +187,6 @@
 .*openhermes.*mistral:
   instruction_template: 'ChatML'
 .*Yi-34B-Chat:
+  instruction_template: 'ChatML'
+(dolphin).*:
   instruction_template: 'ChatML'
