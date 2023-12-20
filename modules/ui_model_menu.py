@@ -95,13 +95,15 @@ def create_ui():
                     
 
                             shared.gradio['compute_dtype'] = gr.Dropdown(label="compute_dtype", choices=["bfloat16", "float16", "float32"], value=shared.args.compute_dtype)
-                            shared.gradio['quant_type'] = gr.Dropdown(label="quant_type", choices=["nf4", "fp4"], value=shared.args.quant_type)                  
+                            shared.gradio['quant_type'] = gr.Dropdown(label="quant_type", choices=["nf4", "fp4"], value=shared.args.quant_type)
+                            shared.gradio['hqq_backend'] = gr.Dropdown(label="hqq_backend", choices=["PYTORCH", "PYTORCH_COMPILE", "ATEN"], value=shared.args.hqq_backend)                  
                             shared.gradio['bf16'] = gr.Checkbox(label="bf16", value=shared.args.bf16, info='Use BF16')
                             shared.gradio['use_flash_attention_2'] = gr.Checkbox(label="use_flash_attention_2", value=shared.args.use_flash_attention_2, info='Transformers Flash attenton 2')
                             # Low End                        
                             shared.gradio['no_cache'] = gr.Checkbox(label="no_cache", value=shared.args.no_cache, info='Disable Generation Cache')
                             shared.gradio['cpu'] = gr.Checkbox(label="cpu", value=shared.args.cpu, info='Offload to CPU')
                             shared.gradio['disk'] = gr.Checkbox(label="disk", value=shared.args.disk, info='Offload to Disk')
+
 
 
                     with gr.Row():
@@ -164,6 +166,8 @@ def create_ui():
                             shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
                             shared.gradio['logits_all'] = gr.Checkbox(label="logits_all", value=shared.args.logits_all, info='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
                             shared.gradio['num_experts_per_token'] = gr.Number(label="Number of experts per token", value=shared.args.num_experts_per_token, info='Only applies to MoE models like Mixtral.')
+                            #shared.gradio['tensorcores'] = gr.Checkbox(label="tensorcores", value=shared.args.tensorcores, info='Use llama-cpp-python compiled with tensor cores support. This increases performance on RTX cards. NVIDIA only.')
+                            shared.gradio['no_offload_kqv'] = gr.Checkbox(label="no_offload_kqv", value=shared.args.no_offload_kqv, info='Do not offload the  K, Q, V to the GPU. This saves VRAM but reduces the performance.')
 
                         # Security
                             shared.gradio['trust_remote_code'] = gr.Checkbox(label="trust-remote-code", value=shared.args.trust_remote_code, info='To enable this option, start the web UI with the --trust-remote-code flag. It is necessary for some models.')
@@ -177,6 +181,7 @@ def create_ui():
                             shared.gradio['exllama_HF_info'] = gr.Markdown('ExLlama_HF is a wrapper that lets you use ExLlama like a Transformers model, which means it can use the Transformers samplers.')
                             shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
                             shared.gradio['autogptq_info'] = gr.Markdown('AutoGPTQ supports GPTQ quantized models of various types.')
+                            shared.gradio['quipsharp_info'] = gr.Markdown('QuIP# only works on Linux.')
 
             with gr.Column():
                 with gr.Row():

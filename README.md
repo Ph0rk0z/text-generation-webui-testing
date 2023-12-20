@@ -443,6 +443,7 @@ List of command-line flags
 
 | Flag        | Description |
 |-------------|-------------|
+| `--tensorcores`  | Use llama-cpp-python compiled with tensor cores support. This increases performance on RTX cards. NVIDIA only. |
 | `--n_ctx N_CTX` | Size of the prompt context. |
 | `--threads` | Number of threads to use. |
 | `--threads-batch THREADS_BATCH` | Number of threads to use for batches/prompt processing. |
@@ -454,6 +455,7 @@ List of command-line flags
 | `--tensor_split TENSOR_SPLIT`       | Split the model across multiple GPUs. Comma-separated list of proportions. Example: 18,17. |
 | `--numa`      | Activate NUMA task allocation for llama.cpp. |
 | `--logits_all`| Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower. |
+| `--no_offload_kqv` | Do not offload the K, Q, V to the GPU. This saves VRAM but reduces the performance. |
 | `--cache-capacity CACHE_CAPACITY`   | Maximum cache capacity (llama-cpp-python). Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. |
 
 #### ExLlama
@@ -508,6 +510,12 @@ List of command-line flags
 | Flag        | Description |
 |-------------|-------------|
 | `--model_type MODEL_TYPE` | Model type of pre-quantized model. Currently gpt2, gptj, gptneox, falcon, llama, mpt, starcoder (gptbigcode), dollyv2, and replit are supported. |
+
+#### HQQ
+
+| Flag        | Description |
+|-------------|-------------|
+| `--hqq-backend` | Backend for the HQQ loader. Valid options: PYTORCH, PYTORCH_COMPILE, ATEN. |
 
 #### DeepSpeed
 
