@@ -55,7 +55,7 @@ settings = {
     'character': 'Assistant',
     'name1': 'User',
     'custom_system_message': '',
-    'instruction_template_str': "{%- set found_item = false -%}\n{%- for message in messages -%}\n    {%- if message['role'] == 'system' -%}\n        {%- set found_item = true -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if not found_item -%}\n    {{- '' + 'Below is an instruction that describes a task. Write a response that appropriately completes the request.' + '\\n\\n' -}}\n{%- endif %}\n{%- for message in messages %}\n    {%- if message['role'] == 'system' -%}\n        {{- '' + message['content'] + '\\n\\n' -}}\n    {%- else -%}\n        {%- if message['role'] == 'user' -%}\n            {{-'### Instruction:\\n' + message['content'] + '\\n\\n'-}}\n        {%- else -%}\n            {{-'### Response:\\n' + message['content'] + '\\n\\n' -}}\n        {%- endif -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if add_generation_prompt -%}\n    {{-'### Response:\\n'-}}\n{%- endif -%}",
+    'instruction_template_str': "{%- set ns = namespace(found=false) -%}\n{%- for message in messages -%}\n    {%- if message['role'] == 'system' -%}\n        {%- set ns.found = true -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if not ns.found -%}\n    {{- '' + 'Below is an instruction that describes a task. Write a response that appropriately completes the request.' + '\\n\\n' -}}\n{%- endif %}\n{%- for message in messages %}\n    {%- if message['role'] == 'system' -%}\n        {{- '' + message['content'] + '\\n\\n' -}}\n    {%- else -%}\n        {%- if message['role'] == 'user' -%}\n            {{-'### Instruction:\\n' + message['content'] + '\\n\\n'-}}\n        {%- else -%}\n            {{-'### Response:\\n' + message['content'] + '\\n\\n' -}}\n        {%- endif -%}\n    {%- endif -%}\n{%- endfor -%}\n{%- if add_generation_prompt -%}\n    {{-'### Response:\\n'-}}\n{%- endif -%}",
     'chat_template_str': "{%- for message in messages %}\n    {%- if message['role'] == 'system' -%}\n        {{- message['content'] + '\\n\\n' -}}\n    {%- else -%}\n        {%- if message['role'] == 'user' -%}\n            {{- name1 + ': ' + message['content'] + '\\n'-}}\n        {%- else -%}\n            {{- name2 + ': ' + message['content'] + '\\n' -}}\n        {%- endif -%}\n    {%- endif -%}\n{%- endfor -%}",
     'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
     'autoload_model': False,
@@ -112,6 +112,7 @@ parser.add_argument('--compute_dtype', type=str, default='float16', help='comput
 parser.add_argument('--quant_type', type=str, default='nf4', help='quant_type for 4-bit. Valid options: nf4, fp4.')
 
 # llama.cpp
+#parser.add_argument('--tensorcores', action='store_true', help='Use llama-cpp-python compiled with tensor cores support. This increases performance on RTX cards. NVIDIA only.')
 parser.add_argument('--n_ctx', type=int, default=2048, help='Size of the prompt context.')
 parser.add_argument('--threads', type=int, default=0, help='Number of threads to use.')
 parser.add_argument('--threads-batch', type=int, default=0, help='Number of threads to use for batches/prompt processing.')
@@ -124,6 +125,7 @@ parser.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layer
 parser.add_argument('--tensor_split', type=str, default=None, help="Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17")
 parser.add_argument('--numa', action='store_true', help='Enable numa support for multiple processors.')
 parser.add_argument('--logits_all', action='store_true', help='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
+parser.add_argument('--no_offload_kqv', action='store_true', help='Do not offload the  K, Q, V to the GPU. This saves VRAM but reduces the performance.')
 parser.add_argument('--cache-capacity', type=str, help='Maximum cache capacity (llama-cpp-python). Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed.')
 
 # GPTQ
@@ -156,6 +158,9 @@ parser.add_argument('--gpu-split', type = str, help = "Comma-separated list of V
 parser.add_argument('--nohalf2', action='store_true', help='Disable use of half2. Maybe help pascal')
 parser.add_argument('--max_seq_len', type=int, default=2048, help="Maximum sequence length.")
 parser.add_argument('--cfg-cache', action='store_true', help="ExLlama_HF: Create an additional cache for CFG negative prompts. Necessary to use CFG with that loader, but not necessary for CFG with base ExLlama.")
+
+# HQQ
+parser.add_argument('--hqq-backend', type=str, default='PYTORCH_COMPILE', help='Backend for the HQQ loader. Valid options: PYTORCH, PYTORCH_COMPILE, ATEN.')
 
 # DeepSpeed
 parser.add_argument('--deepspeed', action='store_true', help='Enable the use of DeepSpeed ZeRO-3 for inference via the Transformers integration.')
@@ -212,6 +217,7 @@ for arg in sys.argv[1:]:
     if hasattr(args, arg):
         provided_arguments.append(arg)
 
+
 # Loader choosing
 if args.autogptq:
     args.loader = 'autogptq'
@@ -222,20 +228,25 @@ if args.exllama:
 
 # Deprecation warnings
 deprecated_args = ['notebook', 'chat', 'no_stream', 'mul_mat_q', 'use_fast']
-for k in deprecated_args:
-    if getattr(args, k):
-        logger.warning(f'The --{k} flag has been deprecated and will be removed soon. Please remove that flag.')
 
-# Security warnings
-if args.trust_remote_code:
-    logger.warning('trust_remote_code is enabled. This is dangerous.')
-if 'COLAB_GPU' not in os.environ and not args.nowebui:
-    if args.share:
-        logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
-    if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
-        logger.warning("\nYou are potentially exposing the web UI to the entire internet without any access password.\nYou can create one with the \"--gradio-auth\" flag like this:\n\n--gradio-auth username:password\n\nMake sure to replace username:password with your own.")
-        if args.multi_user:
-            logger.warning('\nThe multi-user mode is highly experimental and should not be shared publicly.')
+
+def do_cmd_flags_warnings():
+
+    # Deprecation warnings
+    for k in deprecated_args:
+        if getattr(args, k):
+            logger.warning(f'The --{k} flag has been deprecated and will be removed soon. Please remove that flag.')
+
+    # Security warnings
+    if args.trust_remote_code:
+        logger.warning('trust_remote_code is enabled. This is dangerous.')
+    if 'COLAB_GPU' not in os.environ and not args.nowebui:
+        if args.share:
+            logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
+        if any((args.listen, args.share)) and not any((args.gradio_auth, args.gradio_auth_path)):
+            logger.warning("\nYou are potentially exposing the web UI to the entire internet without any access password.\nYou can create one with the \"--gradio-auth\" flag like this:\n\n--gradio-auth username:password\n\nMake sure to replace username:password with your own.")
+            if args.multi_user:
+                logger.warning('\nThe multi-user mode is highly experimental and should not be shared publicly.')
 
 
 def fix_loader_name(name):
@@ -267,6 +278,8 @@ def fix_loader_name(name):
         return 'AutoAWQ'
     elif name in ['quip#', 'quip-sharp', 'quipsharp', 'quip_sharp']:
         return 'QuIP#'
+    elif name in ['hqq']:
+        return 'HQQ'
 
 
 def add_extension(name, last=False):
