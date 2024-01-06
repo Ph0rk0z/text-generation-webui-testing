@@ -6,6 +6,7 @@ exllamav; platform_system != "Darwin" and platform_machine != "x86_64"
 exllamav2; platform_system != "Darwin" and platform_machine != "x86_64"
 gradio==3.50.*
 hqq==0.1.1.post1
+lm_eval==0.3.0
 markdown
 numpy==1.24.*
 optimum==1.16.*
@@ -43,6 +44,7 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # ctransformers
 ctransformers
 autoawq
+
 
 
 

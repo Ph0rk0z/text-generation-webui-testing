@@ -123,7 +123,6 @@ def create_ui():
                         # ExLlama
                             shared.gradio['gpu_split'] = gr.Textbox(label='gpu-split', info='Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7')
                             shared.gradio['max_seq_len'] = gr.Slider(label='max_seq_len', minimum=0, maximum=shared.settings['truncation_length_max'], step=256, info='Context length. Try lowering this if you run out of memory while loading the model.', value=shared.args.max_seq_len)
-                            shared.gradio['nohalf2'] = gr.Checkbox(label="nohalf2", value=shared.args.nohalf2, info='Disable half2 to speed up pre-7.0 GPU')
                             shared.gradio['no_flash_attn'] = gr.Checkbox(label="no_flash_attn", value=shared.args.no_flash_attn, info='Force flash-attention to not be used.')
                             shared.gradio['cache_8bit'] = gr.Checkbox(label="cache_8bit", value=shared.args.cache_8bit, info='Use 8-bit cache to save VRAM.')
 
@@ -144,6 +143,7 @@ def create_ui():
                             shared.gradio['disable_exllama'] = gr.Checkbox(label="disable_exllama", value=shared.args.warmup_autotune, info='Disable exllama kernel. Use for P40/P6000')
                             shared.gradio['disable_exllamav2'] = gr.Checkbox(label="disable_exllamav2", value=shared.args.disable_exllamav2, info='Disable ExLlamav2 kernel.')
                             shared.gradio['warmup_autotune'] = gr.Checkbox(label="warmup_autotune", value=shared.args.warmup_autotune, info='Enable warmup autotune if using triton')
+
 
                         # Attention Hijacks
                             shared.gradio['attention_info'] = gr.Markdown('Hijack Attention via:')
@@ -176,9 +176,7 @@ def create_ui():
 
                         # Infos
                             shared.gradio['gptq_for_llama_info'] = gr.Markdown('GPTQ-for-LLaMa. The original GPTQ. Can be used with Autograd for 4-bit lora and sometimes faster inference. Also lora training in 4bits')
-                            shared.gradio['exllama_info'] = gr.Markdown('ExLlama has to be installed manually. It is the fastest inference implementation.')
                             shared.gradio['exllamav2_info'] = gr.Markdown("ExLlamav2_HF is recommended over ExLlamav2 for better integration with extensions and more consistent sampling behavior across loaders.")
-                            shared.gradio['exllama_HF_info'] = gr.Markdown('ExLlama_HF is a wrapper that lets you use ExLlama like a Transformers model, which means it can use the Transformers samplers.')
                             shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
                             shared.gradio['autogptq_info'] = gr.Markdown('AutoGPTQ supports GPTQ quantized models of various types.')
                             shared.gradio['quipsharp_info'] = gr.Markdown('QuIP# only works on Linux.')
