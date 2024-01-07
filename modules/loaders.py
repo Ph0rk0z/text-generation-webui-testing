@@ -185,6 +185,7 @@ def transformers_samplers():
     return {
         'temperature',
         'temperature_last',
+        'dynatemp',
         'top_p',
         'min_p',
         'top_k',
@@ -250,6 +251,7 @@ loaders_samplers = {
     'ExLlamav2_HF': {
         'temperature',
         'temperature_last',
+        'dynatemp',
         'top_p',
         'min_p',
         'top_k',
@@ -302,6 +304,7 @@ loaders_samplers = {
     'llamacpp_HF': {
         'temperature',
         'temperature_last',
+        'dynatemp',
         'top_p',
         'min_p',
         'top_k',
