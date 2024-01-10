@@ -324,7 +324,6 @@ def AutoAWQ_loader(model_name):
         safetensors=any(model_dir.glob('*.safetensors')),
     )
 
-
     return model
 
 
