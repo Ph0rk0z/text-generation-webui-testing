@@ -16,7 +16,7 @@ global_scores = None
 
 
 class TemperatureLogitsWarperWithDynatemp(LogitsWarper):
-    def __init__(self, temperature: float, dynatemp: float, filter_value: float = -float("Inf"), min_tokens_to_keep: int = 1):
+    def __init__(self, temperature: float, dynamic_temperature: bool, dynatemp_low: float, dynatemp_high: float, dynatemp_exponent: float):
         if not isinstance(temperature, float) or not (temperature > 0):
             except_msg = (
                 f"`temperature` (={temperature}) has to be a strictly positive float, otherwise your next token "
@@ -28,22 +28,23 @@ class TemperatureLogitsWarperWithDynatemp(LogitsWarper):
             raise ValueError(except_msg)
 
         self.temperature = temperature
-        self.dynatemp = dynatemp
-        self.filter_value = filter_value
-        self.min_tokens_to_keep = min_tokens_to_keep
+        self.dynamic_temperature = dynamic_temperature
+        self.dynatemp_low = dynatemp_low
+        self.dynatemp_high = dynatemp_high
+        self.dynatemp_exponent = dynatemp_exponent
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
 
         # Regular temperature
-        if self.dynatemp == 0:
+        if not self.dynamic_temperature:
             scores = scores / self.temperature
             return scores
 
         # Dynamic temperature
         else:
-            min_temp = max(0.0, self.temperature - self.dynatemp)
-            max_temp = self.temperature + self.dynatemp
-            exponent_val = 1.0
+            min_temp = self.dynatemp_low
+            max_temp = self.dynatemp_high
+            exponent_val = self.dynatemp_exponent
 
             # Convert logits to probabilities
             probs = torch.softmax(scores, dim=-1)
@@ -83,7 +84,7 @@ class TemperatureLogitsWarperWithDynatemp(LogitsWarper):
 
             # max_prob_token_id = torch.argmax(scores, dim=-1)  # Get the token ID with the highest probability
             # max_prob_token = shared.tokenizer.convert_ids_to_tokens(int(max_prob_token_id))  # Convert ID to token
-            # print("--- T=", float(dyn_temp), "token=", max_prob_token, "min=", min_temp, "max=", max_temp)
+            # print("--- T=", float(dyn_temp), "token=", max_prob_token, "min=", min_temp, "max=", max_temp, "exponent=", exponent_val)
 
             return scores
 
@@ -285,7 +286,7 @@ def get_logits_warper_patch(self, generation_config):
         generation_config.temperature = float(generation_config.temperature)
 
     temperature = generation_config.temperature
-    if generation_config.dynatemp > 0:
+    if generation_config.dynamic_temperature:
         # Make sure TemperatureLogitsWarper will be created by temporarily
         # setting temperature to a value != 1.
         generation_config.temperature = 1.1
@@ -293,7 +294,13 @@ def get_logits_warper_patch(self, generation_config):
     warpers = self._get_logits_warper_old(generation_config)
     for i in range(len(warpers)):
         if warpers[i].__class__.__name__ == 'TemperatureLogitsWarper':
-            warpers[i] = TemperatureLogitsWarperWithDynatemp(temperature, generation_config.dynatemp)
+            warpers[i] = TemperatureLogitsWarperWithDynatemp(
+                temperature,
+                generation_config.dynamic_temperature,
+                generation_config.dynatemp_low,
+                generation_config.dynatemp_high,
+                generation_config.dynatemp_exponent
+            )
 
     warpers_to_add = LogitsProcessorList()
     min_tokens_to_keep = 2 if generation_config.num_beams > 1 else 1
@@ -361,7 +368,10 @@ def get_logits_processor_patch(self, **kwargs):
 def generation_config_init_patch(self, **kwargs):
     self.__init___old(**kwargs)
     self.min_p = kwargs.pop("min_p", 0.0)
-    self.dynatemp = kwargs.pop("dynatemp", 0.0)
+    self.dynamic_temperature = kwargs.pop("dynamic_temperature", False)
+    self.dynatemp_low = kwargs.pop("dynatemp_low", 1)
+    self.dynatemp_high = kwargs.pop("dynatemp_high", 1)
+    self.dynatemp_exponent = kwargs.pop("dynatemp_exponent", 1)
     self.tfs = kwargs.pop("tfs", 1.0)
     self.top_a = kwargs.pop("top_a", 0.0)
     self.mirostat_mode = kwargs.pop("mirostat_mode", 0)
