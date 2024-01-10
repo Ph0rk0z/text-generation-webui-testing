@@ -1,26 +1,27 @@
-accelerate==0.23.*
+accelerate==0.25.*
 colorama
 datasets
 einops
-exllamav2==0.0.6
+exllamav2==0.0.11
 gradio==3.50.*
+hqq==0.1.2
+lm_eval==0.3.0
 markdown
 numpy==1.24.*
-optimum==1.13.1
+optimum==1.16.*
 pandas
-peft==0.5.*
+peft==0.7.*
 Pillow>=9.5.0
 pyyaml
 requests
-safetensors==0.4.0
+rich
+safetensors==0.4.1
 scipy
 sentencepiece
 tensorboard
-transformers==4.34.*
+transformers==4.36.*
 tqdm
 wandb
-
-git+https://github.com/oobabooga/torch-grammar.git
 
 # bitsandbytes
 bitsandbytes==0.41.1; platform_system != "Windows"

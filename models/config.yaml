@@ -20,8 +20,6 @@
   model_type: 'dollyv2'
 .*replit:
   model_type: 'replit'
-.*AWQ:
-  n_batch: 1
 .*(oasst|openassistant-|stablelm-7b-sft-v7-epoch-3):
   instruction_template: 'Open Assistant'
   skip_special_tokens: false
@@ -40,16 +38,13 @@
   instruction_template: 'LLaVA'
   custom_stopping_strings: '"\n###"'
 .*llava.*1.5:
-  instruction_template: 'LLaVA-v1'
+  instruction_template: 'Vicuna-v1.1'
 .*wizard.*mega:
   instruction_template: 'Wizard-Mega'
   custom_stopping_strings: '"</s>"'
 .*starchat-beta:
   instruction_template: 'Starchat-Beta'
   custom_stopping_strings: '"<|end|>"'
-.*(openorca-platypus2):
-  instruction_template: 'OpenOrca-Platypus2'
-  custom_stopping_strings: '"### Instruction:", "### Response:"'
 (?!.*v0)(?!.*1.1)(?!.*1_1)(?!.*stable)(?!.*chinese).*vicuna:
   instruction_template: 'Vicuna-v0'
 .*vicuna.*v0:
@@ -113,7 +108,7 @@
 .*bactrian:
   instruction_template: 'Bactrian'
 .*(h2ogpt-oig-|h2ogpt-oasst1-|h2ogpt-research-oasst1-):
-  instruction_template: 'H2O-human_bot'
+  instruction_template: 'INCITE-Chat'
 .*h2ogpt-gm-:
   instruction_template: 'H2O-prompt_answer'
 .*manticore:
@@ -133,7 +128,7 @@
 .*lazarus:
   instruction_template: 'Alpaca'
 .*guanaco-.*(7|13|33|65)b:
-  instruction_template: 'Guanaco'
+  instruction_template: 'Vicuna-v0'
 .*hypermantis:
   instruction_template: 'Alpaca'
 .*open-llama-.*-open-instruct:
@@ -149,11 +144,14 @@
 .*wizardcoder:
   instruction_template: 'Alpaca'
 .*minotaur:
-  instruction_template: 'Minotaur'
+  instruction_template: 'Manticore Chat'
 .*orca_mini:
   instruction_template: 'Orca Mini'
 .*(platypus|gplatty|superplatty):
   instruction_template: 'Alpaca'
+.*(openorca-platypus2):
+  instruction_template: 'OpenOrca-Platypus2'
+  custom_stopping_strings: '"### Instruction:", "### Response:"'
 .*longchat:
   instruction_template: 'Vicuna-v1.1'
 .*vicuna-33b:
@@ -176,9 +174,19 @@
   instruction_template: 'OpenChat'
 .*codellama.*instruct:
   instruction_template: 'Llama-v2'
-.*mistral.*instruct:
+.*(mistral|mixtral).*instruct:
   instruction_template: 'Mistral'
 .*mistral.*openorca:
   instruction_template: 'ChatML'
 .*(WizardCoder-Python-34B-V1.0|Phind-CodeLlama-34B-v2|CodeBooga-34B-v0.1):
   instruction_template: 'Alpaca'
+.*orca-2-(13|7)b:
+  instruction_template: 'ChatML'
+.*openhermes.*mistral:
+  instruction_template: 'ChatML'
+.*Yi-34B-Chat:
+  instruction_template: 'ChatML'
+(dolphin).*:
+  instruction_template: 'ChatML'
+.*synthia:
+  instruction_template: 'Synthia'

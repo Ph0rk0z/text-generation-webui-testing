@@ -20,12 +20,21 @@ try:
 except:
     llama_cpp_cuda = None
 
+try:
+    import llama_cpp_cuda_tensorcores
+except:
+    llama_cpp_cuda_tensorcores = None
+
 
 def llama_cpp_lib():
-    if (shared.args.cpu and llama_cpp is not None) or llama_cpp_cuda is None:
+    if shared.args.cpu and llama_cpp is not None:
         return llama_cpp
-    else:
+    elif shared.args.tensorcores and llama_cpp_cuda_tensorcores is not None:
+        return llama_cpp_cuda_tensorcores
+    elif llama_cpp_cuda is not None:
         return llama_cpp_cuda
+    else:
+        return llama_cpp
 
 
 class LlamacppHF(PreTrainedModel):
@@ -39,7 +48,7 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model.ctx
+            'ctx': self.model._ctx
         }
 
         if shared.args.cfg_cache:
@@ -65,7 +74,7 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model.ctx
+            'ctx': self.model._ctx
         })
 
     def save_negative_cache(self):
@@ -73,20 +82,20 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model.ctx
+            'ctx': self.model._ctx
         })
 
     def load_cache(self):
         self.model.n_tokens = self.llamacpp_cache['n_tokens']
         self.model.input_ids = self.llamacpp_cache['input_ids']
         self.model.scores = self.llamacpp_cache['scores']
-        self.model.ctx = self.llamacpp_cache['ctx']
+        self.model._ctx = self.llamacpp_cache['ctx']
 
     def load_negative_cache(self):
         self.model.n_tokens = self.llamacpp_cache_negative['n_tokens']
         self.model.input_ids = self.llamacpp_cache_negative['input_ids']
         self.model.scores = self.llamacpp_cache_negative['scores']
-        self.model.ctx = self.llamacpp_cache_negative['ctx']
+        self.model._ctx = self.llamacpp_cache_negative['ctx']
 
     @property
     def device(self) -> torch.device:
@@ -135,6 +144,9 @@ class LlamacppHF(PreTrainedModel):
                     self.model.n_tokens = longest_prefix
                     if len(seq_tensor) - longest_prefix > 0:
                         self.model.eval(seq[longest_prefix:])
+                    else:
+                        self.model.n_tokens -= 1
+                        self.model.eval([seq[-1]])
 
             if reset:
                 self.model.reset()
@@ -192,7 +204,6 @@ class LlamacppHF(PreTrainedModel):
         params = {
             'model_path': str(model_file),
             'n_ctx': shared.args.n_ctx,
-            'seed': int(shared.args.llama_cpp_seed),
             'n_threads': shared.args.threads or None,
             'n_threads_batch': shared.args.threads_batch or None,
             'n_batch': shared.args.n_batch,
@@ -204,7 +215,8 @@ class LlamacppHF(PreTrainedModel):
             'rope_freq_base': RoPE.get_rope_freq_base(shared.args.alpha_value, shared.args.rope_freq_base),
             'tensor_split': tensor_split_list,
             'rope_freq_scale': 1.0 / shared.args.compress_pos_emb,
-            'logits_all': True,
+            'logits_all': shared.args.logits_all,
+            'offload_kqv': not shared.args.no_offload_kqv
         }
 
         Llama = llama_cpp_lib().Llama
