@@ -104,8 +104,6 @@ def create_ui():
                             shared.gradio['cpu'] = gr.Checkbox(label="cpu", value=shared.args.cpu, info='Offload to CPU')
                             shared.gradio['disk'] = gr.Checkbox(label="disk", value=shared.args.disk, info='Offload to Disk')
 
-
-
                     with gr.Row():
                         with gr.Column():
                         # 8 Bit
