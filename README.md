@@ -344,12 +344,23 @@ The `requirements*.txt` above contain various wheels precompiled through GitHub 
 ### Alternative: Docker
 
 ```
-ln -s docker/{nvidia/Dockerfile,docker-compose.yml,.dockerignore} .
+For NVIDIA GPU:
+ln -s docker/{nvidia/Dockerfile,nvidia/docker-compose.yml,.dockerignore} .
+For AMD GPU: 
+ln -s docker/{amd/Dockerfile,intel/docker-compose.yml,.dockerignore} .
+For Intel GPU:
+ln -s docker/{intel/Dockerfile,amd/docker-compose.yml,.dockerignore} .
+For CPU only
+ln -s docker/{cpu/Dockerfile,cpu/docker-compose.yml,.dockerignore} .
 cp docker/.env.example .env
+#Create logs/cache dir : 
+mkdir -p logs cache
 # Edit .env and set: 
 #   TORCH_CUDA_ARCH_LIST based on your GPU model
 #   APP_RUNTIME_GID      your host user's group id (run `id -g` in a terminal)
 #   BUILD_EXTENIONS      optionally add comma separated list of extensions to build
+# Edit CMD_FLAGS.txt and add in it the options you want to execute (like --listen --cpu)
+# 
 docker compose up --build
 ```
 
@@ -619,7 +630,3 @@ If you would like to contribute to the project, check out the [Contributing guid
 ## Acknowledgment
 
 In August 2023, [Andreessen Horowitz](https://a16z.com/) (a16z) provided a generous grant to encourage and support my independent work on this project. I am **extremely** grateful for their trust and recognition.
-
-## Support
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/B0B5JFPBO)
