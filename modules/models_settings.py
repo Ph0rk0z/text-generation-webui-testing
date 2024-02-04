@@ -225,7 +225,7 @@ def apply_model_settings_to_state(model, state):
         loader = model_settings.pop('loader')
 
         # If the user is using an alternative loader for the same model type, let them keep using it
-        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ']) and not (loader == 'llama.cpp' and state['loader'] in ['llamacpp_HF', 'ctransformers']):
+        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ', 'ExLlama', 'ExLlama_HF']) and not (loader == 'llama.cpp' and state['loader'] in ['llamacpp_HF', 'ctransformers']):
             state['loader'] = loader
 
     for k in model_settings:

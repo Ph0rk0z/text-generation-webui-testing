@@ -15,9 +15,10 @@ def get_next_logits(prompt, state, use_samplers, previous, top_logits=25, return
 
     is_non_hf_exllamav2 = shared.model.__class__.__name__ == 'Exllamav2Model'
     is_non_hf_llamacpp = shared.model.__class__.__name__ == 'LlamaCppModel'
+    is_non_hf_exllamav1 = shared.model.__class__.__name__ == 'ExllamaModel'
 
     if use_samplers:
-        if any([is_non_hf_exllamav2, is_non_hf_llamacpp]):
+        if any([is_non_hf_exllamav2, is_non_hf_llamacpp, is_non_hf_exllamav1]):
             logger.error("Sampler hijacking is not supported non-Huggingface loaders.")
             # sampling is all done in c for exllama, so it is really hard to hijack
             # it should be possible to hijack llamacpp sampler by hijacking all their sampling methods,
@@ -31,7 +32,7 @@ def get_next_logits(prompt, state, use_samplers, previous, top_logits=25, return
 
         scores = sampler_hijack.global_scores[-1]
     else:
-        if is_non_hf_exllamav2:
+        if is_non_hf_exllamav2 or is_non_hf_exllamav1:
             if is_torch_xpu_available():
                 tokens = shared.tokenizer.encode(prompt).to("xpu:0")
             else:
@@ -50,7 +51,7 @@ def get_next_logits(prompt, state, use_samplers, previous, top_logits=25, return
 
     probs = torch.softmax(scores, dim=-1, dtype=torch.float)
     topk_values, topk_indices = torch.topk(probs, k=top_logits, largest=True, sorted=True)
-    if is_non_hf_llamacpp:
+    if is_non_hf_llamacpp or is_non_hf_exllamav1:
         topk_indices = [i.expand((1, 1)) for i in topk_indices]
 
     if hasattr(shared.tokenizer, 'convert_ids_to_tokens'):

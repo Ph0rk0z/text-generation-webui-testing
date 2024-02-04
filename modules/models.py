@@ -370,12 +370,22 @@ def AutoGPTQ_loader(model_name):
 
     return modules.AutoGPTQ_loader.load_quantized(model_name)
 
+def ExLlama_loader(model_name):
+    from modules.exllama import ExllamaModel
+
+    model, tokenizer = ExllamaModel.from_pretrained(model_name)
+    return model, tokenizer
+
+def ExLlama_HF_loader(model_name):
+    from modules.exllama_hf import ExllamaHF
+
+    return ExllamaHF.from_pretrained(model_name)
+
 def ExLlamav2_loader(model_name):
     from modules.exllamav2 import Exllamav2Model
 
     model, tokenizer = Exllamav2Model.from_pretrained(model_name)
     return model, tokenizer
-
 
 def ExLlamav2_HF_loader(model_name):
     from modules.exllamav2_hf import Exllamav2HF
