@@ -185,6 +185,8 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'alpha_value',
         'compress_pos_emb',
+        'flash_attention',
+        'quant_attn',
         'trust_remote_code',
         'no_use_fast',
     ],
@@ -194,7 +196,8 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'alpha_value',
         'compress_pos_emb',
-        'num_experts_per_token',
+        'quant_attn',
+        'flash_attention',
     ],
 })
 
