@@ -77,17 +77,23 @@ def create_ui():
                 with gr.Box():
                     with gr.Row():
                         with gr.Column():
-                            for i in range(len(total_mem)):
-                                shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"gpu-memory in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
+                            with gr.Blocks():
+                                for i in range(len(total_mem)):
+                                    shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"gpu-memory in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
 
-                        shared.gradio['cpu_memory'] = gr.Slider(label="cpu-memory in MiB", maximum=total_cpu_mem, value=default_cpu_mem)
-
-
-                    with gr.Row():
-                        with gr.Column(): 
+                            shared.gradio['cpu_memory'] = gr.Slider(label="cpu-memory in MiB", maximum=total_cpu_mem, value=default_cpu_mem)
                             shared.gradio['auto_devices'] = gr.Checkbox(label="auto-devices", value=shared.args.auto_devices)
+                          
+                        # 8 Bit
+                            shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
+                            shared.gradio['threshold'] = gr.Slider(label="8bit threshold", minimum=0.0, maximum=10.0, value=shared.args.threshold, info='Threshold for 8bit on older cards if you did not patch BnB' )
+                        # Rope
+                            #with gr.Blocks():
+                            shared.gradio['alpha_value'] = gr.Slider(label='alpha_value', minimum=1, maximum=32, step=0.1, info='Positional embeddings alpha factor for NTK RoPE scaling. Recommended values (NTKv1): 1.75 for 1.5x context, 2.5 for 2x context. Use either this or compress_pos_emb, not both.', value=shared.args.alpha_value)
+                            shared.gradio['rope_freq_base'] = gr.Slider(label='rope_freq_base', minimum=0, maximum=1000000, step=1000, info='If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63)', value=shared.args.rope_freq_base)
+                            shared.gradio['compress_pos_emb'] = gr.Slider(label='compress_pos_emb', minimum=1, maximum=8, step=1, info='Positional embeddings compression factor. Should be set to (context length) / (model\'s original context length). Equal to 1/rope_freq_scale.', value=shared.args.compress_pos_emb)
             
-
+                        with gr.Column():
                             # Transformers 4 bit
                             shared.gradio['transformers_info'] = gr.Markdown('load-in-4bit params:')                      
                             shared.gradio['load_in_4bit'] = gr.Checkbox(label="load-in-4bit", value=shared.args.load_in_4bit)
@@ -95,8 +101,7 @@ def create_ui():
                     
 
                             shared.gradio['compute_dtype'] = gr.Dropdown(label="compute_dtype", choices=["bfloat16", "float16", "float32"], value=shared.args.compute_dtype)
-                            shared.gradio['quant_type'] = gr.Dropdown(label="quant_type", choices=["nf4", "fp4"], value=shared.args.quant_type)
-                            shared.gradio['hqq_backend'] = gr.Dropdown(label="hqq_backend", choices=["PYTORCH", "PYTORCH_COMPILE", "ATEN"], value=shared.args.hqq_backend)                  
+                            shared.gradio['quant_type'] = gr.Dropdown(label="quant_type", choices=["nf4", "fp4"], value=shared.args.quant_type)               
                             shared.gradio['bf16'] = gr.Checkbox(label="bf16", value=shared.args.bf16, info='Use BF16')
                             shared.gradio['use_flash_attention_2'] = gr.Checkbox(label="use_flash_attention_2", value=shared.args.use_flash_attention_2, info='Transformers Flash attenton 2')
                             # Low End                        
@@ -106,9 +111,11 @@ def create_ui():
 
                     with gr.Row():
                         with gr.Column():
-                        # 8 Bit
-                            shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
-                            shared.gradio['threshold'] = gr.Slider(label="8bit threshold", minimum=0.0, maximum=10.0, value=shared.args.threshold, info='Threshold for 8bit on older cards if you did not patch BnB' )
+                        # ExLlama
+                            shared.gradio['gpu_split'] = gr.Textbox(label='gpu-split', info='Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7')
+                            shared.gradio['max_seq_len'] = gr.Slider(label='max_seq_len', minimum=0, maximum=shared.settings['truncation_length_max'], step=256, info='Context length. Try lowering this if you run out of memory while loading the model.', value=shared.args.max_seq_len)
+                            shared.gradio['no_flash_attn'] = gr.Checkbox(label="no_flash_attn", value=shared.args.no_flash_attn, info='Force flash-attention to not be used.')
+                            shared.gradio['cache_8bit'] = gr.Checkbox(label="cache_8bit", value=shared.args.cache_8bit, info='Use 8-bit cache to save VRAM.')
 
                     with gr.Row():
                         with gr.Column():
@@ -116,57 +123,54 @@ def create_ui():
                             shared.gradio['wbits'] = gr.Dropdown(label="wbits", choices=["None", 1, 2, 3, 4, 8], value=shared.args.wbits if shared.args.wbits > 0 else "None")
                             shared.gradio['groupsize'] = gr.Dropdown(label="groupsize", choices=["None", 32, 64, 128, 1024], value=shared.args.groupsize if shared.args.groupsize > 0 else "None")
                             shared.gradio['model_type'] = gr.Dropdown(label="model_type", choices=["None"], value=shared.args.model_type or "None")
-                            shared.gradio['pre_layer'] = gr.Textbox(label="pre_layer", value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0, info='Llama only: Pre layer. For multi-gpu, write the numbers separated by spaces, ie: 30 60 More layers than the model will cause error')
 
-                        # ExLlama
-                            shared.gradio['gpu_split'] = gr.Textbox(label='gpu-split', info='Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7')
-                            shared.gradio['max_seq_len'] = gr.Slider(label='max_seq_len', minimum=0, maximum=shared.settings['truncation_length_max'], step=256, info='Context length. Try lowering this if you run out of memory while loading the model.', value=shared.args.max_seq_len)
-                            shared.gradio['no_flash_attn'] = gr.Checkbox(label="no_flash_attn", value=shared.args.no_flash_attn, info='Force flash-attention to not be used.')
-                            shared.gradio['cache_8bit'] = gr.Checkbox(label="cache_8bit", value=shared.args.cache_8bit, info='Use 8-bit cache to save VRAM.')
-
-                        # Rope
-                            shared.gradio['alpha_value'] = gr.Slider(label='alpha_value', minimum=1, maximum=32, step=0.1, info='Positional embeddings alpha factor for NTK RoPE scaling. Recommended values (NTKv1): 1.75 for 1.5x context, 2.5 for 2x context. Use either this or compress_pos_emb, not both.', value=shared.args.alpha_value)
-                            shared.gradio['rope_freq_base'] = gr.Slider(label='rope_freq_base', minimum=0, maximum=1000000, step=1000, info='If greater than 0, will be used instead of alpha_value. Those two are related by rope_freq_base = 10000 * alpha_value ^ (64 / 63)', value=shared.args.rope_freq_base)
-                            shared.gradio['compress_pos_emb'] = gr.Slider(label='compress_pos_emb', minimum=1, maximum=8, step=1, info='Positional embeddings compression factor. Should be set to (context length) / (model\'s original context length). Equal to 1/rope_freq_scale.', value=shared.args.compress_pos_emb)
-                                         
-                        # Autograd
-                            shared.gradio['autograd'] = gr.Checkbox(label="Autograd", value=shared.args.autograd, info='4bit Lora Support and Inference')
-                            shared.gradio['v1'] = gr.Checkbox(label="GPTQv1 Model (Autograd Only)", value=shared.args.v1, info='V1 Models. Pre Groupsize')
-
+                                                           
                         # AutoGPTQ
                             shared.gradio['quant_attn'] = gr.Checkbox(label="quant_attn", value=shared.args.quant_attn, info='Enable fused attention. AutoGPTQ/Autograd/ExLlama')
                             shared.gradio['fused_mlp'] = gr.Checkbox(label="fused_mlp", value=shared.args.fused_mlp, info='Enable fused MLP. AutoGPTQ (triton)/Autograd/ExLlama')
-                            shared.gradio['triton'] = gr.Checkbox(label="triton", value=shared.args.triton, info='Autogptq Triton Backend')
-                            shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Enable act_order and groupsize together')
                             shared.gradio['disable_exllama'] = gr.Checkbox(label="disable_exllama", value=shared.args.warmup_autotune, info='Disable exllama kernel. Use for P40/P6000')
                             shared.gradio['disable_exllamav2'] = gr.Checkbox(label="disable_exllamav2", value=shared.args.disable_exllamav2, info='Disable ExLlamav2 kernel.')
+                        with gr.Column():
+
+                        # Autograd
+                            shared.gradio['autograd'] = gr.Checkbox(label="Autograd", value=shared.args.autograd, info='4bit Lora Support and Inference')
+                            shared.gradio['v1'] = gr.Checkbox(label="GPTQv1 Model (Autograd Only)", value=shared.args.v1, info='V1 Models. Pre Groupsize')
+                            shared.gradio['pre_layer'] = gr.Textbox(label="pre_layer", value=shared.args.pre_layer[0] if shared.args.pre_layer is not None else 0, info='Llama only: Pre layer. For multi-gpu, write the numbers separated by spaces, ie: 30 60 More layers than the model will cause error')
+                            shared.gradio['autogptq_act_order'] = gr.Checkbox(label="autogptq_act_order", value=shared.args.autogptq_act_order, info='Enable act_order and groupsize together')
+                            shared.gradio['triton'] = gr.Checkbox(label="triton", value=shared.args.triton, info='Autogptq Triton Backend')
                             shared.gradio['warmup_autotune'] = gr.Checkbox(label="warmup_autotune", value=shared.args.warmup_autotune, info='Enable warmup autotune if using triton')
 
-
+                   # with gr.Row():
+                       # with gr.Column():
                         # Attention Hijacks
                             shared.gradio['attention_info'] = gr.Markdown('Hijack Attention via:')
                             shared.gradio['xformers'] = gr.Checkbox(label="xformers", value=shared.args.quant_attn, info='Hijack attention with xformers')
-                            shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Torch 2.0 SDP attention')
+                            shared.gradio['sdp_attention'] = gr.Checkbox(label="sdp_attention", value=shared.args.sdp_attention, info='Hijack attention via Torch 2.0 SDP attention')
                             shared.gradio['flash_attention'] = gr.Checkbox(label="flash_attention", value=shared.args.flash_attention, info='Flash attention 2. Ampere and up.')
-
+                    with gr.Row():
+                            with gr.Column():
                         # Llama.cpp
-                            shared.gradio['n_gpu_layers'] = gr.Slider(label="n-gpu-layers", minimum=0, maximum=256, value=shared.args.n_gpu_layers)
-                            shared.gradio['n_ctx'] = gr.Slider(minimum=0, maximum=shared.settings['truncation_length_max'], step=256, label="n_ctx", value=shared.args.n_ctx, info='Context length. Try lowering this if you run out of memory while loading the model.')
-                            shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
-                            shared.gradio['threads_batch'] = gr.Slider(label="threads_batch", minimum=0, step=1, maximum=32, value=shared.args.threads_batch)
-                            shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
-                            shared.gradio['numa'] = gr.Checkbox(label="numa support", value=shared.args.numa)
-                            shared.gradio['main_gpu'] = gr.Number(label='Main GPU', value=shared.args.main_gpu)
-                            shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
-                            shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
-                            shared.gradio['no_mul_mat_q'] = gr.Checkbox(label="no_mul_mat_q", value=shared.args.no_mul_mat_q, info='Disable the mulmat kernels.')
+                                
+                                shared.gradio['main_gpu'] = gr.Number(label='Main GPU', value=shared.args.main_gpu)
+                                shared.gradio['n_gpu_layers'] = gr.Slider(label="n-gpu-layers", minimum=0, maximum=256, value=shared.args.n_gpu_layers)
+                                shared.gradio['n_ctx'] = gr.Slider(minimum=0, maximum=shared.settings['truncation_length_max'], step=256, label="n_ctx", value=shared.args.n_ctx, info='Context length. Try lowering this if you run out of memory while loading the model.')
+                                shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
+                                shared.gradio['threads_batch'] = gr.Slider(label="threads_batch", minimum=0, step=1, maximum=32, value=shared.args.threads_batch)
+                                shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
+                            with gr.Column():
+                                shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
+                                shared.gradio['numa'] = gr.Checkbox(label="numa support", value=shared.args.numa)
+                                shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
+                                shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
+                                shared.gradio['no_mul_mat_q'] = gr.Checkbox(label="no_mul_mat_q", value=shared.args.no_mul_mat_q, info='Disable the mulmat kernels.')
+                                shared.gradio['row_split'] = gr.Checkbox(label="row_split", value=shared.args.row_split, info='Split the model by rows across GPUs. This may improve multi-gpu performance.')
+                                shared.gradio['logits_all'] = gr.Checkbox(label="logits_all", value=shared.args.logits_all, info='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
+                                shared.gradio['no_offload_kqv'] = gr.Checkbox(label="no_offload_kqv", value=shared.args.no_offload_kqv, info='Do not offload the  K, Q, V to the GPU. This saves VRAM but reduces the performance.')
+                                    #shared.gradio['tensorcores'] = gr.Checkbox(label="tensorcores", value=shared.args.tensorcores, info='Use llama-cpp-python compiled with tensor cores support. This increases performance on RTX cards. NVIDIA only.')                           
+                    with gr.Row():  
+                        with gr.Column():
                             shared.gradio['cfg_cache'] = gr.Checkbox(label="cfg-cache", value=shared.args.cfg_cache, info='Create an additional cache for CFG negative prompts.')
-                            shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
-                            shared.gradio['logits_all'] = gr.Checkbox(label="logits_all", value=shared.args.logits_all, info='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
-                            shared.gradio['num_experts_per_token'] = gr.Number(label="Number of experts per token", value=shared.args.num_experts_per_token, info='Only applies to MoE models like Mixtral.')
-                            #shared.gradio['tensorcores'] = gr.Checkbox(label="tensorcores", value=shared.args.tensorcores, info='Use llama-cpp-python compiled with tensor cores support. This increases performance on RTX cards. NVIDIA only.')
-                            shared.gradio['no_offload_kqv'] = gr.Checkbox(label="no_offload_kqv", value=shared.args.no_offload_kqv, info='Do not offload the  K, Q, V to the GPU. This saves VRAM but reduces the performance.')
-
+                            shared.gradio['num_experts_per_token'] = gr.Number(label="Number of experts per token", value=shared.args.num_experts_per_token, info='Only applies to MoE models like Mixtral.')              
                         # Security
                             shared.gradio['trust_remote_code'] = gr.Checkbox(label="trust-remote-code", value=shared.args.trust_remote_code, info='To enable this option, start the web UI with the --trust-remote-code flag. It is necessary for some models.')
 
@@ -174,6 +178,7 @@ def create_ui():
 
                         # Infos
                             shared.gradio['gptq_for_llama_info'] = gr.Markdown('GPTQ-for-LLaMa. The original GPTQ. Can be used with Autograd for 4-bit lora and sometimes faster inference. Also lora training in 4bits')
+                            shared.gradio['hqq_backend'] = gr.Dropdown(label="hqq_backend", choices=["PYTORCH", "PYTORCH_COMPILE", "ATEN"], value=shared.args.hqq_backend)
                             shared.gradio['exllamav2_info'] = gr.Markdown("ExLlamav2_HF is recommended over ExLlamav2 for better integration with extensions and more consistent sampling behavior across loaders.")
                             shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
                             shared.gradio['autogptq_info'] = gr.Markdown('AutoGPTQ supports GPTQ quantized models of various types.')

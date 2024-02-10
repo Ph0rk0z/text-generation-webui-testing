@@ -29,8 +29,8 @@ bitsandbytes; platform_system != "Windows"
 https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.1-py3-none-win_amd64.whl; platform_system == "Windows"
 
 # llama-cpp-python (CPU only, AVX2)
-https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.11/llama_cpp_python-0.2.11-cp310-cp310-win_amd64.whl; platform_system == "Windows"
 
+https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.11/llama_cpp_python-0.2.11-cp310-cp310-win_amd64.whl; platform_system == "Windows"
 
 # CUDA wheels
 https://github.com/jllllll/AutoGPTQ/releases/download/v0.4.2/auto_gptq-0.4.2+cu118-cp310-cp310-win_amd64.whl; platform_system == "Windows"
