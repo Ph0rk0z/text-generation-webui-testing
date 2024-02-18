@@ -5,10 +5,11 @@ einops
 exllamav; platform_system != "Darwin" and platform_machine != "x86_64"
 exllamav2; platform_system != "Darwin" and platform_machine != "x86_64"
 gradio==3.50.*
+hqq
 jinja2==3.1.2
 markdown
-numpy==1.24.*
-optimum==1.16.*
+numpy==1.26.*
+optimum
 pandas
 peft
 Pillow>=9.5.0
@@ -19,9 +20,12 @@ safetensors
 scipy
 sentencepiece
 tensorboard
-transformers==4.37.*
+transformers
 tqdm
 wandb
+ctransformers
+autoawq
+
 
 # bitsandbytes
 bitsandbytes; platform_system != "Windows"
@@ -41,6 +45,4 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
 
-# ctransformers
-ctransformers
-autoawq
+

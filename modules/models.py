@@ -55,7 +55,7 @@ sampler_hijack.hijack_samplers()
 
 
 def load_model(model_name, loader=None):
-    logger.info(f"Loading {model_name}")
+    logger.info(f"Loading \"{model_name}\"")
     t0 = time.time()
 
     shared.is_seq2seq = False
@@ -252,7 +252,7 @@ def llamacpp_loader(model_name):
     else:
         model_file = list(Path(f'{shared.args.model_dir}/{model_name}').glob('*.gguf'))[0]
 
-    logger.info(f"llama.cpp weights detected: {model_file}")
+    logger.info(f"llama.cpp weights detected: \"{model_file}\"")
     model, tokenizer = LlamaCppModel.from_pretrained(model_file)
     return model, tokenizer
 
@@ -260,26 +260,17 @@ def llamacpp_loader(model_name):
 def llamacpp_HF_loader(model_name):
     from modules.llamacpp_hf import LlamacppHF
 
-    for fname in [model_name, "oobabooga_llama-tokenizer", "llama-tokenizer"]:
-        path = Path(f'{shared.args.model_dir}/{fname}')
-        if all((path / file).exists() for file in ['tokenizer_config.json', 'special_tokens_map.json', 'tokenizer.model']):
-            logger.info(f'Using tokenizer from: {path}')
-            break
+    path = Path(f'{shared.args.model_dir}/{model_name}')
+
+    # Check if a HF tokenizer is available for the model
+    if all((path / file).exists() for file in ['tokenizer_config.json']):
+        logger.info(f'Using tokenizer from: \"{path}\"')
     else:
-        logger.error("Could not load the model because a tokenizer in transformers format was not found. Please download oobabooga/llama-tokenizer.")
+        logger.error("Could not load the model because a tokenizer in Transformers format was not found.")
         return None, None
 
-    if shared.args.no_use_fast:
-        logger.info('Loading the tokenizer with use_fast=False.')
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        path,
-        trust_remote_code=shared.args.trust_remote_code,
-        use_fast=not shared.args.no_use_fast
-    )
-
     model = LlamacppHF.from_pretrained(model_name)
-    return model, tokenizer
+    return model
 
 
 def ctransformers_loader(model_name):
@@ -304,7 +295,7 @@ def ctransformers_loader(model_name):
                 logger.error("Could not find a model for ctransformers.")
                 return None, None
 
-    logger.info(f'ctransformers weights detected: {model_file}')
+    logger.info(f'ctransformers weights detected: \"{model_file}\"')
     model, tokenizer = ctrans.from_pretrained(model_file)
     return model, tokenizer
 
@@ -397,7 +388,7 @@ def HQQ_loader(model_name):
     from hqq.core.quantize import HQQBackend, HQQLinear
     from hqq.engine.hf import HQQModelForCausalLM
 
-    logger.info(f"Loading HQQ model with backend: {shared.args.hqq_backend}")
+    logger.info(f"Loading HQQ model with backend: \"{shared.args.hqq_backend}\"")
 
     model_dir = Path(f'{shared.args.model_dir}/{model_name}')
     model = HQQModelForCausalLM.from_quantized(str(model_dir))
