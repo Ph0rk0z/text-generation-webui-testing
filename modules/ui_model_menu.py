@@ -17,6 +17,7 @@ from modules.models import load_model, unload_model
 from modules.models_settings import (
     apply_model_settings_to_state,
     get_model_metadata,
+    save_instruction_template,
     save_model_settings,
     update_model_parameters
 )
@@ -114,6 +115,7 @@ def create_ui():
                         # ExLlama
                             shared.gradio['gpu_split'] = gr.Textbox(label='gpu-split', info='Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7')
                             shared.gradio['max_seq_len'] = gr.Slider(label='max_seq_len', minimum=0, maximum=shared.settings['truncation_length_max'], step=256, info='Context length. Try lowering this if you run out of memory while loading the model.', value=shared.args.max_seq_len)
+                            shared.gradio['autosplit'] = gr.Checkbox(label="autosplit", value=shared.args.autosplit, info='Automatically split the model tensors across the available GPUs.')
                             shared.gradio['no_flash_attn'] = gr.Checkbox(label="no_flash_attn", value=shared.args.no_flash_attn, info='Force flash-attention to not be used.')
                             shared.gradio['cache_8bit'] = gr.Checkbox(label="cache_8bit", value=shared.args.cache_8bit, info='Use 8-bit cache to save VRAM.')
 
@@ -180,19 +182,38 @@ def create_ui():
                             shared.gradio['gptq_for_llama_info'] = gr.Markdown('GPTQ-for-LLaMa. The original GPTQ. Can be used with Autograd for 4-bit lora and sometimes faster inference. Also lora training in 4bits')
                             shared.gradio['hqq_backend'] = gr.Dropdown(label="hqq_backend", choices=["PYTORCH", "PYTORCH_COMPILE", "ATEN"], value=shared.args.hqq_backend)
                             shared.gradio['exllamav2_info'] = gr.Markdown("ExLlamav2_HF is recommended over ExLlamav2 for better integration with extensions and more consistent sampling behavior across loaders.")
-                            shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Make sure to first download oobabooga/llama-tokenizer under "Download custom model or LoRA".')
+                            shared.gradio['llamacpp_HF_info'] = gr.Markdown('llamacpp_HF is a wrapper that lets you use llama.cpp like a Transformers model, which means it can use the Transformers samplers. Requires model tokenizer.')
                             shared.gradio['autogptq_info'] = gr.Markdown('AutoGPTQ supports GPTQ quantized models of various types.')
                             shared.gradio['quipsharp_info'] = gr.Markdown('QuIP# only works on Linux.')
+
 
             with gr.Column():
                 with gr.Row():
                     shared.gradio['autoload_model'] = gr.Checkbox(value=shared.settings['autoload_model'], label='Autoload the model', info='Whether to load the model as soon as it is selected in the Model dropdown.', interactive=not mu)
 
-                shared.gradio['custom_model_menu'] = gr.Textbox(label="Download model or LoRA", info="Enter the Hugging Face username/model path, for instance: facebook/galactica-125m. To specify a branch, add it at the end after a \":\" character like this: facebook/galactica-125m:main. To download a single file, enter its name in the second box.", interactive=not mu)
-                shared.gradio['download_specific_file'] = gr.Textbox(placeholder="File name (for GGUF models)", show_label=False, max_lines=1, interactive=not mu)
-                with gr.Row():
-                    shared.gradio['download_model_button'] = gr.Button("Download", variant='primary', interactive=not mu)
-                    shared.gradio['get_file_list'] = gr.Button("Get file list", interactive=not mu)
+                with gr.Tab("Download"):
+                    shared.gradio['custom_model_menu'] = gr.Textbox(label="Download model or LoRA", info="Enter the Hugging Face username/model path, for instance: facebook/galactica-125m. To specify a branch, add it at the end after a \":\" character like this: facebook/galactica-125m:main. To download a single file, enter its name in the second box.", interactive=not mu)
+                    shared.gradio['download_specific_file'] = gr.Textbox(placeholder="File name (for GGUF models)", show_label=False, max_lines=1, interactive=not mu)
+                    with gr.Row():
+                        shared.gradio['download_model_button'] = gr.Button("Download", variant='primary', interactive=not mu)
+                        shared.gradio['get_file_list'] = gr.Button("Get file list", interactive=not mu)
+
+                with gr.Tab("llamacpp_HF creator"):
+                    with gr.Row():
+                        shared.gradio['gguf_menu'] = gr.Dropdown(choices=utils.get_available_ggufs(), value=lambda: shared.model_name, label='Choose your GGUF', elem_classes='slim-dropdown', interactive=not mu)
+                        ui.create_refresh_button(shared.gradio['gguf_menu'], lambda: None, lambda: {'choices': utils.get_available_ggufs()}, 'refresh-button', interactive=not mu)
+
+                    shared.gradio['unquantized_url'] = gr.Textbox(label="Enter the URL for the original (unquantized) model", info="Example: https://huggingface.co/lmsys/vicuna-13b-v1.5", max_lines=1)
+                    shared.gradio['create_llamacpp_hf_button'] = gr.Button("Submit", variant="primary", interactive=not mu)
+                    gr.Markdown("This will move your gguf file into a subfolder of `models` along with the necessary tokenizer files.")
+
+                with gr.Tab("Customize instruction template"):
+                    with gr.Row():
+                        shared.gradio['customized_template'] = gr.Dropdown(choices=utils.get_available_instruction_templates(), value='None', label='Select the desired instruction template', elem_classes='slim-dropdown')
+                        ui.create_refresh_button(shared.gradio['customized_template'], lambda: None, lambda: {'choices': utils.get_available_instruction_templates()}, 'refresh-button', interactive=not mu)
+
+                    shared.gradio['customized_template_submit'] = gr.Button("Submit", variant="primary", interactive=not mu)
+                    gr.Markdown("This allows you to set a customized template for the model currently selected in the \"Model loader\" menu. Whenever the model gets loaded, this template will be used in place of the template specified in the model's medatada, which sometimes is wrong.")
 
                 with gr.Row():
                     shared.gradio['model_status'] = gr.Markdown('No model is loaded' if shared.model_name == 'None' else 'Ready')
@@ -242,6 +263,8 @@ def create_event_handlers():
     shared.gradio['download_model_button'].click(download_model_wrapper, gradio('custom_model_menu', 'download_specific_file'), gradio('model_status'), show_progress=True)
     shared.gradio['get_file_list'].click(partial(download_model_wrapper, return_links=True), gradio('custom_model_menu', 'download_specific_file'), gradio('model_status'), show_progress=True)
     shared.gradio['autoload_model'].change(lambda x: gr.update(visible=not x), gradio('autoload_model'), gradio('load_model'))
+    shared.gradio['create_llamacpp_hf_button'].click(create_llamacpp_hf, gradio('gguf_menu', 'unquantized_url'), gradio('model_status'), show_progress=True)
+    shared.gradio['customized_template_submit'].click(save_instruction_template, gradio('model_menu', 'customized_template'), gradio('model_status'), show_progress=True)
 
 
 def load_model_wrapper(selected_model, loader, autoload=False):
@@ -283,27 +306,58 @@ def load_lora_wrapper(selected_loras):
 
 def download_model_wrapper(repo_id, specific_file, progress=gr.Progress(), return_links=False, check=False):
     try:
-        progress(0.0)
         downloader = importlib.import_module("download-model").ModelDownloader()
+
+        progress(0.0)
         model, branch = downloader.sanitize_model_and_branch_names(repo_id, None)
+
         yield ("Getting the download links from Hugging Face")
         links, sha256, is_lora, is_llamacpp = downloader.get_download_links_from_huggingface(model, branch, text_only=False, specific_file=specific_file)
         if return_links:
-            yield '\n\n'.join([f"`{Path(link).name}`" for link in links])
+            output = "```\n"
+            for link in links:
+                output += f"{Path(link).name}" + "\n"
+
+            output += "```"
+            yield output
             return
 
         yield ("Getting the output folder")
-        base_folder = shared.args.lora_dir if is_lora else shared.args.model_dir
-        output_folder = downloader.get_output_folder(model, branch, is_lora, is_llamacpp=is_llamacpp, base_folder=base_folder)
+        output_folder = downloader.get_output_folder(model, branch, is_lora, is_llamacpp=is_llamacpp)
         if check:
             progress(0.5)
+
             yield ("Checking previously downloaded files")
             downloader.check_model_files(model, branch, links, sha256, output_folder)
             progress(1.0)
         else:
             yield (f"Downloading file{'s' if len(links) > 1 else ''} to `{output_folder}/`")
             downloader.download_model_files(model, branch, links, sha256, output_folder, progress_bar=progress, threads=4, is_llamacpp=is_llamacpp)
-            yield ("Done!")
+
+            yield (f"Model successfully saved to `{output_folder}/`.")
+    except:
+        progress(1.0)
+        yield traceback.format_exc().replace('\n', '\n\n')
+
+
+def create_llamacpp_hf(gguf_name, unquantized_url, progress=gr.Progress()):
+    try:
+        downloader = importlib.import_module("download-model").ModelDownloader()
+
+        progress(0.0)
+        model, branch = downloader.sanitize_model_and_branch_names(unquantized_url, None)
+
+        yield ("Getting the tokenizer files links from Hugging Face")
+        links, sha256, is_lora, is_llamacpp = downloader.get_download_links_from_huggingface(model, branch, text_only=True)
+        output_folder = Path(shared.args.model_dir) / (re.sub(r'(?i)\.gguf$', '', gguf_name) + "-HF")
+
+        yield (f"Downloading tokenizer to `{output_folder}`")
+        downloader.download_model_files(model, branch, links, sha256, output_folder, progress_bar=progress, threads=4, is_llamacpp=False)
+
+        # Move the GGUF
+        (Path(shared.args.model_dir) / gguf_name).rename(output_folder / gguf_name)
+
+        yield (f"Model saved to `{output_folder}/`.\n\nYou can now load it using llamacpp_HF.")
     except:
         progress(1.0)
         yield traceback.format_exc().replace('\n', '\n\n')

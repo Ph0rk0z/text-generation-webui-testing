@@ -5,7 +5,7 @@ import llama_cpp
 import numpy as np
 import torch
 
-from modules import RoPE, shared
+from modules import RoPE, llama_cpp_python_hijack, shared
 from modules.callbacks import Iteratorize
 from modules.logging_colors import logger
 from modules.text_generation import get_max_prompt_length
