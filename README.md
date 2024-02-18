@@ -21,6 +21,13 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+02/18/24
+```
+Exllama V1 is back and llama.cpp HF require you copy tokenizers
+to the respective model folders.
+```
+
+
 10/27/23
 ```
 If loading fails due to flash attention and your system doesn't support it:
