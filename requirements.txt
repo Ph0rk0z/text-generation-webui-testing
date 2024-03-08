@@ -27,6 +27,12 @@ ctransformers
 autoawq
 
 
+# API
+SpeechRecognition==3.10.0
+flask_cloudflared==0.0.14
+sse-starlette==1.6.5
+tiktoken
+
 # bitsandbytes
 bitsandbytes; platform_system != "Windows"
 # it is better to install these manually from source on linux.
@@ -44,6 +50,7 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
+
 
 
 
