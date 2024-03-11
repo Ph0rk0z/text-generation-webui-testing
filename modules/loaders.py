@@ -53,6 +53,8 @@ loaders_and_params = OrderedDict({
         'no_offload_kqv',
         'row_split',
 #        'tensorcores',
+        'streaming_llm',
+        'attention_sink_size',
     ],
     'llamacpp_HF': [
         'n_ctx',
@@ -77,6 +79,8 @@ loaders_and_params = OrderedDict({
         'no_offload_kqv',
         'row_split',
 #        'tensorcores',
+        'streaming_llm',
+        'attention_sink_size',
         'llamacpp_HF_info',
     ],
     'ExLlamav2_HF': [
