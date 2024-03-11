@@ -1,4 +1,6 @@
 accelerate
+aqlm[gpu,cpu]==1.1.0; platform_system == "Linux"
+bitsandbytes==0.43.*
 colorama
 datasets
 einops
@@ -8,6 +10,7 @@ gradio==3.50.*
 hqq
 jinja2==3.1.2
 markdown
+numba==0.59.*
 numpy==1.26.*
 optimum
 pandas
@@ -50,6 +53,7 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
+
 
 
 
