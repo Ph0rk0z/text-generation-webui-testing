@@ -77,18 +77,22 @@ def get_model_metadata(model):
         # Transformers metadata
         if hf_metadata is not None:
             metadata = json.loads(open(path, 'r', encoding='utf-8').read())
-            if 'max_position_embeddings' in metadata:
-                model_settings['truncation_length'] = metadata['max_position_embeddings']
-                model_settings['max_seq_len'] = metadata['max_position_embeddings']
+            for k in ['max_position_embeddings', 'max_seq_len']:
+                if k in metadata:
+                    model_settings['truncation_length'] = metadata[k]
+                    model_settings['max_seq_len'] = metadata[k]
 
             if 'rope_theta' in metadata:
                 model_settings['rope_freq_base'] = metadata['rope_theta']
+            elif 'attn_config' in metadata and 'rope_theta' in metadata['attn_config']:
+                model_settings['rope_freq_base'] = metadata['attn_config']['rope_theta']
 
             if 'rope_scaling' in metadata and type(metadata['rope_scaling']) is dict and all(key in metadata['rope_scaling'] for key in ('type', 'factor')):
                 if metadata['rope_scaling']['type'] == 'linear':
                     model_settings['compress_pos_emb'] = metadata['rope_scaling']['factor']
 
-            if 'quantization_config' in metadata:
+            # Read GPTQ metadata for old GPTQ loaders
+            if 'quantization_config' in metadata and metadata['quantization_config'].get('quant_method', '') != 'exl2':
                 if 'bits' in metadata['quantization_config']:
                     model_settings['wbits'] = metadata['quantization_config']['bits']
                 if 'group_size' in metadata['quantization_config']:
