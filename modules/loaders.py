@@ -421,7 +421,6 @@ loaders_samplers = {
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
-        'min_length',
         'seed',
         'do_sample',
         'mirostat_mode',
