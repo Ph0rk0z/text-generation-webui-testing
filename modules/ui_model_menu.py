@@ -75,7 +75,7 @@ def create_ui():
         with gr.Row():
             with gr.Column():
                 shared.gradio['loader'] = gr.Dropdown(label="Model loader", choices=loaders.loaders_and_params.keys(), value=None)
-                with gr.Box():
+                with gr.Blocks():
                     with gr.Row():
                         with gr.Column():
                             with gr.Blocks():
@@ -160,7 +160,7 @@ def create_ui():
                                 shared.gradio['threads'] = gr.Slider(label="threads", minimum=0, step=1, maximum=96, value=shared.args.threads)
                                 shared.gradio['threads_batch'] = gr.Slider(label="threads_batch", minimum=0, step=1, maximum=32, value=shared.args.threads_batch)
                                 shared.gradio['n_batch'] = gr.Slider(label="n_batch", minimum=1, maximum=2048, value=shared.args.n_batch)
-                                shared.gradio['attention_sink_size'] = gr.Number(label="attention_sink_size", value=shared.args.attention_sink_size, info='StreamingLLM: number of sink tokens. Only used if the trimmed prompt doesn\'t share a prefix with the old prompt.')
+                                shared.gradio['attention_sink_size'] = gr.Number(label="attention_sink_size", value=shared.args.attention_sink_size, precision=0, info='StreamingLLM: number of sink tokens. Only used if the trimmed prompt doesn\'t share a prefix with the old prompt.')
 
                             with gr.Column():
                                 shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
