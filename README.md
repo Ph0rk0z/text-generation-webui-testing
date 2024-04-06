@@ -21,6 +21,11 @@ https://github.com/Ph0rk0z/GPTQ-Merged (dual module branch)
 
 ~~https://github.com/sterlind/peft~~ (now auto patches)
 
+04/5/24
+```
+Update gradio to 4.25
+```
+
 02/18/24
 ```
 Exllama V1 is back and llama.cpp HF require you copy tokenizers
