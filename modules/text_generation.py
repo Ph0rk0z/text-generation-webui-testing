@@ -10,7 +10,11 @@ import traceback
 import numpy as np
 import torch
 import transformers
-from transformers import LogitsProcessorList, is_torch_xpu_available
+from transformers import (
+    LogitsProcessorList,
+    is_torch_npu_available,
+    is_torch_xpu_available
+)
 
 import modules.shared as shared
 from modules.cache_utils import process_llamacpp_cache
@@ -22,9 +26,9 @@ from modules.callbacks import (
 from modules.extensions import apply_extensions
 from modules.grammar.grammar_utils import initialize_grammar
 from modules.grammar.logits_process import GrammarConstrainedLogitsProcessor
-from modules.html_generator import generate_4chan_html, generate_basic_html
+from modules.html_generator import generate_basic_html
 from modules.logging_colors import logger
-from modules.models import clear_torch_cache, local_rank
+from modules.models import clear_torch_cache
 
 
 def generate_reply(*args, **kwargs):
@@ -46,7 +50,7 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False, escap
             yield ''
             return
 
-        if shared.model.__class__.__name__ in ['LlamaCppModel', 'Exllamav2Model', 'CtransformersModel', 'ExllamaModel']:
+        if shared.model.__class__.__name__ in ['LlamaCppModel', 'Exllamav2Model', 'ExllamaModel']:
             generate_func = generate_reply_custom
         else:
             generate_func = generate_reply_HF
@@ -114,7 +118,7 @@ def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_lengt
     if shared.tokenizer is None:
         raise ValueError('No tokenizer is loaded')
 
-    if shared.model.__class__.__name__ in ['LlamaCppModel', 'CtransformersModel', 'Exllamav2Model', 'ExllamaModel']:
+    if shared.model.__class__.__name__ in ['LlamaCppModel', 'Exllamav2Model', 'ExllamaModel']:
         input_ids = shared.tokenizer.encode(str(prompt))
         if shared.model.__class__.__name__ not in ['Exllamav2Model']:
             input_ids = np.array(input_ids).reshape(1, len(input_ids))
@@ -128,15 +132,18 @@ def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_lengt
     if truncation_length is not None:
         input_ids = input_ids[:, -truncation_length:]
 
-    if shared.model.__class__.__name__ in ['LlamaCppModel', 'Exllamav2Model', 'CtransformersModel', 'ExllamaModel'] or shared.args.cpu:
+    if shared.model.__class__.__name__ in ['LlamaCppModel', 'Exllamav2Model', 'ExllamaModel'] or shared.args.cpu:
         return input_ids
     elif shared.args.deepspeed:
-        return input_ids.to(device=local_rank)
+        import deepspeed
+        return input_ids.to(deepspeed.get_accelerator().current_device_name())
     elif torch.backends.mps.is_available():
         device = torch.device('mps')
         return input_ids.to(device)
     elif is_torch_xpu_available():
         return input_ids.to("xpu:0")
+    elif is_torch_npu_available():
+        return input_ids.to("npu:0")
     else:
         return input_ids.cuda()
 
@@ -186,23 +193,7 @@ def generate_reply_wrapper(question, state, stopping_strings=None):
 
 
 def formatted_outputs(reply, model_name):
-    if any(s in model_name for s in ['gpt-4chan', 'gpt4chan']):
-        reply = fix_gpt4chan(reply)
-        return html.unescape(reply), generate_4chan_html(reply)
-    else:
-        return html.unescape(reply), generate_basic_html(reply)
-
-
-def fix_gpt4chan(s):
-    """
-    Removes empty replies from gpt4chan outputs
-    """
-    for i in range(10):
-        s = re.sub("--- [0-9]*\n>>[0-9]*\n---", "---", s)
-        s = re.sub("--- [0-9]*\n *\n---", "---", s)
-        s = re.sub("--- [0-9]*\n\n\n---", "---", s)
-
-    return s
+    return html.unescape(reply), generate_basic_html(reply)
 
 
 def fix_galactica(s):
@@ -229,6 +220,8 @@ def set_manual_seed(seed):
         torch.cuda.manual_seed_all(seed)
     elif is_torch_xpu_available():
         torch.xpu.manual_seed_all(seed)
+    elif is_torch_npu_available():
+        torch.npu.manual_seed_all(seed)
 
     return seed
 

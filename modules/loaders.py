@@ -164,15 +164,6 @@ loaders_and_params = OrderedDict({
         'no_use_fast',
         'gptq_for_llama_info',
     ],
-    'ctransformers': [
-        'n_ctx',
-        'n_gpu_layers',
-        'n_batch',
-        'threads',
-        'model_type',
-        'no_mmap',
-        'mlock'
-    ],
     'QuIP#': [
         'trust_remote_code',
         'no_use_fast',
@@ -379,13 +370,6 @@ loaders_samplers = {
         'skip_special_tokens',
         'auto_max_new_tokens',
     },
-    'ctransformers': {
-        'temperature',
-        'top_p',
-        'top_k',
-        'repetition_penalty',
-        'repetition_penalty_range',
-    },
     'ExLlama': {
         'temperature',
         'top_p',
@@ -445,19 +429,6 @@ loaders_model_types = {
         "opt",
         "gptj",
         "gptneox"
-    ],
-    'ctransformers': [
-        "None",
-        "gpt2",
-        "gptj",
-        "gptneox",
-        "llama",
-        "mpt",
-        "dollyv2",
-        "replit",
-        "starcoder",
-        "gptbigcode",
-        "falcon"
     ],
 }
 

@@ -48,7 +48,7 @@ def get_model_metadata(model):
         model_settings['loader'] = loader
 
     # GGUF metadata
-    if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF', 'ctransformers']:
+    if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF']:
         path = Path(f'{shared.args.model_dir}/{model}')
         if path.is_file():
             model_file = path
@@ -56,12 +56,13 @@ def get_model_metadata(model):
             model_file = list(path.glob('*.gguf'))[0]
 
         metadata = metadata_gguf.load_metadata(model_file)
-        if 'llama.context_length' in metadata:
-            model_settings['n_ctx'] = metadata['llama.context_length']
-        if 'llama.rope.scale_linear' in metadata:
-            model_settings['compress_pos_emb'] = metadata['llama.rope.scale_linear']
-        if 'llama.rope.freq_base' in metadata:
-            model_settings['rope_freq_base'] = metadata['llama.rope.freq_base']
+        for k in metadata:
+            if k.endswith('context_length'):
+                model_settings['n_ctx'] = metadata[k]
+            elif k.endswith('rope.freq_base'):
+                model_settings['rope_freq_base'] = metadata[k]
+            elif k.endswith('rope.scale_linear'):
+                model_settings['compress_pos_emb'] = metadata[k]
         if 'tokenizer.chat_template' in metadata:
             template = metadata['tokenizer.chat_template']
             eos_token = metadata['tokenizer.ggml.tokens'][metadata['tokenizer.ggml.eos_token_id']]
@@ -77,7 +78,7 @@ def get_model_metadata(model):
         # Transformers metadata
         if hf_metadata is not None:
             metadata = json.loads(open(path, 'r', encoding='utf-8').read())
-            for k in ['max_position_embeddings', 'max_seq_len']:
+            for k in ['max_position_embeddings', 'model_max_length', 'max_seq_len']:
                 if k in metadata:
                     model_settings['truncation_length'] = metadata[k]
                     model_settings['max_seq_len'] = metadata[k]
@@ -119,7 +120,6 @@ def get_model_metadata(model):
             template = metadata['chat_template']
             if isinstance(template, list):
                 template = template[0]['template']
-            
             for k in ['eos_token', 'bos_token']:
                 if k in metadata:
                     value = metadata[k]
@@ -135,9 +135,6 @@ def get_model_metadata(model):
     if 'instruction_template' not in model_settings:
         model_settings['instruction_template'] = 'Alpaca'
 
-    if model_settings['instruction_template'] != 'Custom (obtained from model metadata)':
-        model_settings['instruction_template_str'] = chat.load_instruction_template(model_settings['instruction_template'])
-
     # Ignore rope_freq_base if set to the default value
     if 'rope_freq_base' in model_settings and model_settings['rope_freq_base'] == 10000:
         model_settings.pop('rope_freq_base')
@@ -148,6 +145,10 @@ def get_model_metadata(model):
         if re.match(pat.lower(), model.lower()):
             for k in settings[pat]:
                 model_settings[k] = settings[pat][k]
+
+    # Load instruction template if defined by name rather than by value
+    if model_settings['instruction_template'] != 'Custom (obtained from model metadata)':
+        model_settings['instruction_template_str'] = chat.load_instruction_template(model_settings['instruction_template'])
 
     return model_settings
 
@@ -234,7 +235,7 @@ def apply_model_settings_to_state(model, state):
         loader = model_settings.pop('loader')
 
         # If the user is using an alternative loader for the same model type, let them keep using it
-        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ', 'ExLlama', 'ExLlama_HF']) and not (loader == 'llama.cpp' and state['loader'] in ['ctransformers']):
+        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ', 'ExLlama', 'ExLlama_HF']):
             state['loader'] = loader
 
     for k in model_settings:

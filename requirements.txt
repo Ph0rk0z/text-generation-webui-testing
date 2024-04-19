@@ -1,4 +1,4 @@
-accelerate
+ccelerate
 aqlm[gpu,cpu]; platform_system == "Linux"
 bitsandbytes
 colorama
@@ -7,7 +7,7 @@ einops
 exllamav; platform_system != "Darwin" and platform_machine != "x86_64"
 exllamav2; platform_system != "Darwin" and platform_machine != "x86_64"
 hqq
-gradio==4.23.*
+gradio==4.26.*
 jinja2==3.1.2
 markdown
 numba==0.59.*
@@ -16,6 +16,7 @@ optimum
 pandas
 peft
 Pillow>=9.5.0
+psutil
 pyyaml
 requests
 rich
@@ -53,6 +54,7 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
+
 
 
 
