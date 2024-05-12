@@ -167,7 +167,7 @@ def create_ui():
 
                             with gr.Column():
                                 shared.gradio['tensor_split'] = gr.Textbox(label='tensor_split', info='Split the model across multiple GPUs, comma-separated list of proportions, e.g. 18,17')
-
+                                shared.gradio['flash-attn'] = gr.Checkbox(label="flash-attn", value=shared.args.flash_attn, info='Use flash-attention.')
                                 shared.gradio['numa'] = gr.Checkbox(label="numa support", value=shared.args.numa)
                                 shared.gradio['no_mmap'] = gr.Checkbox(label="no-mmap", value=shared.args.no_mmap)
                                 shared.gradio['mlock'] = gr.Checkbox(label="mlock", value=shared.args.mlock)
