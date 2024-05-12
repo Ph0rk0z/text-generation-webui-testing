@@ -48,7 +48,7 @@ def get_model_metadata(model):
         model_settings['loader'] = loader
 
     # GGUF metadata
-    if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF', 'ctransformers']:
+    if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF']:
         path = Path(f'{shared.args.model_dir}/{model}')
         if path.is_file():
             model_file = path
@@ -56,12 +56,13 @@ def get_model_metadata(model):
             model_file = list(path.glob('*.gguf'))[0]
 
         metadata = metadata_gguf.load_metadata(model_file)
-        if 'llama.context_length' in metadata:
-            model_settings['n_ctx'] = metadata['llama.context_length']
-        if 'llama.rope.scale_linear' in metadata:
-            model_settings['compress_pos_emb'] = metadata['llama.rope.scale_linear']
-        if 'llama.rope.freq_base' in metadata:
-            model_settings['rope_freq_base'] = metadata['llama.rope.freq_base']
+        for k in metadata:
+            if k.endswith('context_length'):
+                model_settings['n_ctx'] = metadata[k]
+            elif k.endswith('rope.freq_base'):
+                model_settings['rope_freq_base'] = metadata[k]
+            elif k.endswith('rope.scale_linear'):
+                model_settings['compress_pos_emb'] = metadata[k]
         if 'tokenizer.chat_template' in metadata:
             template = metadata['tokenizer.chat_template']
             eos_token = metadata['tokenizer.ggml.tokens'][metadata['tokenizer.ggml.eos_token_id']]
@@ -70,6 +71,7 @@ def get_model_metadata(model):
             template = template.replace('bos_token', "'{}'".format(bos_token))
 
             template = re.sub(r'raise_exception\([^)]*\)', "''", template)
+            template = re.sub(r'{% if add_generation_prompt %}.*', '', template, flags=re.DOTALL)
             model_settings['instruction_template'] = 'Custom (obtained from model metadata)'
             model_settings['instruction_template_str'] = template
 
@@ -77,18 +79,22 @@ def get_model_metadata(model):
         # Transformers metadata
         if hf_metadata is not None:
             metadata = json.loads(open(path, 'r', encoding='utf-8').read())
-            if 'max_position_embeddings' in metadata:
-                model_settings['truncation_length'] = metadata['max_position_embeddings']
-                model_settings['max_seq_len'] = metadata['max_position_embeddings']
+            for k in ['max_position_embeddings', 'model_max_length', 'max_seq_len']:
+                if k in metadata:
+                    model_settings['truncation_length'] = metadata[k]
+                    model_settings['max_seq_len'] = metadata[k]
 
             if 'rope_theta' in metadata:
                 model_settings['rope_freq_base'] = metadata['rope_theta']
+            elif 'attn_config' in metadata and 'rope_theta' in metadata['attn_config']:
+                model_settings['rope_freq_base'] = metadata['attn_config']['rope_theta']
 
             if 'rope_scaling' in metadata and type(metadata['rope_scaling']) is dict and all(key in metadata['rope_scaling'] for key in ('type', 'factor')):
                 if metadata['rope_scaling']['type'] == 'linear':
                     model_settings['compress_pos_emb'] = metadata['rope_scaling']['factor']
 
-            if 'quantization_config' in metadata:
+            # Read GPTQ metadata for old GPTQ loaders
+            if 'quantization_config' in metadata and metadata['quantization_config'].get('quant_method', '') != 'exl2':
                 if 'bits' in metadata['quantization_config']:
                     model_settings['wbits'] = metadata['quantization_config']['bits']
                 if 'group_size' in metadata['quantization_config']:
@@ -113,6 +119,9 @@ def get_model_metadata(model):
         metadata = json.loads(open(path, 'r', encoding='utf-8').read())
         if 'chat_template' in metadata:
             template = metadata['chat_template']
+            if isinstance(template, list):
+                template = template[0]['template']
+
             for k in ['eos_token', 'bos_token']:
                 if k in metadata:
                     value = metadata[k]
@@ -122,14 +131,12 @@ def get_model_metadata(model):
                     template = template.replace(k, "'{}'".format(value))
 
             template = re.sub(r'raise_exception\([^)]*\)', "''", template)
+            template = re.sub(r'{% if add_generation_prompt %}.*', '', template, flags=re.DOTALL)
             model_settings['instruction_template'] = 'Custom (obtained from model metadata)'
             model_settings['instruction_template_str'] = template
 
     if 'instruction_template' not in model_settings:
         model_settings['instruction_template'] = 'Alpaca'
-
-    if model_settings['instruction_template'] != 'Custom (obtained from model metadata)':
-        model_settings['instruction_template_str'] = chat.load_instruction_template(model_settings['instruction_template'])
 
     # Ignore rope_freq_base if set to the default value
     if 'rope_freq_base' in model_settings and model_settings['rope_freq_base'] == 10000:
@@ -142,6 +149,10 @@ def get_model_metadata(model):
             for k in settings[pat]:
                 model_settings[k] = settings[pat][k]
 
+    # Load instruction template if defined by name rather than by value
+    if model_settings['instruction_template'] != 'Custom (obtained from model metadata)':
+        model_settings['instruction_template_str'] = chat.load_instruction_template(model_settings['instruction_template'])
+
     return model_settings
 
 
@@ -153,6 +164,8 @@ def infer_loader(model_name, model_settings):
         loader = 'ExLlamav2_HF'
     elif (path_to_model / 'quant_config.json').exists() or re.match(r'.*-awq', model_name.lower()):
         loader = 'AutoAWQ'
+    elif len(list(path_to_model.glob('*.gguf'))) > 0 and path_to_model.is_dir() and (path_to_model / 'tokenizer_config.json').exists():
+        loader = 'llamacpp_HF'
     elif len(list(path_to_model.glob('*.gguf'))) > 0:
         loader = 'llama.cpp'
     elif re.match(r'.*\.gguf', model_name.lower()):
@@ -225,7 +238,7 @@ def apply_model_settings_to_state(model, state):
         loader = model_settings.pop('loader')
 
         # If the user is using an alternative loader for the same model type, let them keep using it
-        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ']) and not (loader == 'llama.cpp' and state['loader'] in ['llamacpp_HF', 'ctransformers']):
+        if not (loader == 'ExLlamav2_HF' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlamav2', 'AutoGPTQ']):
             state['loader'] = loader
 
     for k in model_settings:
@@ -243,27 +256,54 @@ def save_model_settings(model, state):
     Save the settings for this model to models/config-user.yaml
     '''
     if model == 'None':
-        yield ("Not saving the settings because no model is loaded.")
+        yield ("Not saving the settings because no model is selected in the menu.")
         return
 
-    with Path(f'{shared.args.model_dir}/config-user.yaml') as p:
-        if p.exists():
-            user_config = yaml.safe_load(open(p, 'r').read())
-        else:
-            user_config = {}
+    user_config = shared.load_user_config()
+    model_regex = model + '$'  # For exact matches
+    if model_regex not in user_config:
+        user_config[model_regex] = {}
 
-        model_regex = model + '$'  # For exact matches
-        if model_regex not in user_config:
-            user_config[model_regex] = {}
+    for k in ui.list_model_elements():
+        if k == 'loader' or k in loaders.loaders_and_params[state['loader']]:
+            user_config[model_regex][k] = state[k]
 
-        for k in ui.list_model_elements():
-            if k == 'loader' or k in loaders.loaders_and_params[state['loader']]:
-                user_config[model_regex][k] = state[k]
+    shared.user_config = user_config
 
-        shared.user_config = user_config
+    output = yaml.dump(user_config, sort_keys=False)
+    p = Path(f'{shared.args.model_dir}/config-user.yaml')
+    with open(p, 'w') as f:
+        f.write(output)
 
-        output = yaml.dump(user_config, sort_keys=False)
-        with open(p, 'w') as f:
-            f.write(output)
+    yield (f"Settings for `{model}` saved to `{p}`.")
 
-        yield (f"Settings for `{model}` saved to `{p}`.")
+
+def save_instruction_template(model, template):
+    '''
+    Similar to the function above, but it saves only the instruction template.
+    '''
+    if model == 'None':
+        yield ("Not saving the template because no model is selected in the menu.")
+        return
+
+    user_config = shared.load_user_config()
+    model_regex = model + '$'  # For exact matches
+    if model_regex not in user_config:
+        user_config[model_regex] = {}
+
+    if template == 'None':
+        user_config[model_regex].pop('instruction_template', None)
+    else:
+        user_config[model_regex]['instruction_template'] = template
+
+    shared.user_config = user_config
+
+    output = yaml.dump(user_config, sort_keys=False)
+    p = Path(f'{shared.args.model_dir}/config-user.yaml')
+    with open(p, 'w') as f:
+        f.write(output)
+
+    if template == 'None':
+        yield (f"Instruction template for `{model}` unset in `{p}`, as the value for template was `{template}`.")
+    else:
+        yield (f"Instruction template for `{model}` saved to `{p}` as `{template}`.")

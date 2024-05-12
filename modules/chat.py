@@ -82,10 +82,20 @@ def generate_chat_prompt(user_input, state, **kwargs):
     history = kwargs.get('history', state['history'])['internal']
 
     # Templates
-    chat_template = jinja_env.from_string(state['chat_template_str'])
+    chat_template_str = state['chat_template_str']
+    if state['mode'] != 'instruct':
+        chat_template_str = replace_character_names(chat_template_str, state['name1'], state['name2'])
+
     instruction_template = jinja_env.from_string(state['instruction_template_str'])
-    chat_renderer = partial(chat_template.render, add_generation_prompt=False, name1=state['name1'], name2=state['name2'])
     instruct_renderer = partial(instruction_template.render, add_generation_prompt=False)
+    chat_template = jinja_env.from_string(chat_template_str)
+    chat_renderer = partial(
+        chat_template.render,
+        add_generation_prompt=False,
+        name1=state['name1'],
+        name2=state['name2'],
+        user_bio=replace_character_names(state['user_bio'], state['name1'], state['name2']),
+    )
 
     messages = []
 
@@ -95,7 +105,7 @@ def generate_chat_prompt(user_input, state, **kwargs):
             messages.append({"role": "system", "content": state['custom_system_message']})
     else:
         renderer = chat_renderer
-        if state['context'].strip() != '':
+        if state['context'].strip() != '' or state['user_bio'].strip() != '':
             context = replace_character_names(state['context'], state['name1'], state['name2'])
             messages.append({"role": "system", "content": context})
 
@@ -115,7 +125,7 @@ def generate_chat_prompt(user_input, state, **kwargs):
         messages.append({"role": "user", "content": user_input})
 
     def remove_extra_bos(prompt):
-        for bos_token in ['<s>', '<|startoftext|>']:
+        for bos_token in ['<s>', '<|startoftext|>', '<BOS_TOKEN>', '<|endoftext|>']:
             while prompt.startswith(bos_token):
                 prompt = prompt[len(bos_token):]
 
@@ -136,6 +146,7 @@ def generate_chat_prompt(user_input, state, **kwargs):
             command = state['chat-instruct_command']
             command = command.replace('<|character|>', state['name2'] if not impersonate else state['name1'])
             command = command.replace('<|prompt|>', prompt)
+            command = replace_character_names(command, state['name1'], state['name2'])
 
             if _continue:
                 prefix = get_generation_prompt(renderer, impersonate=impersonate, strip_trailing_spaces=False)[0]
@@ -150,12 +161,14 @@ def generate_chat_prompt(user_input, state, **kwargs):
 
             prompt = instruction_template.render(messages=outer_messages)
             suffix = get_generation_prompt(instruct_renderer, impersonate=False)[1]
-            prompt = prompt[:-len(suffix)]
+            if len(suffix) > 0:
+                prompt = prompt[:-len(suffix)]
 
         else:
             if _continue:
                 suffix = get_generation_prompt(renderer, impersonate=impersonate)[1]
-                prompt = prompt[:-len(suffix)]
+                if len(suffix) > 0:
+                    prompt = prompt[:-len(suffix)]
             else:
                 prefix = get_generation_prompt(renderer, impersonate=impersonate)[0]
                 if state['mode'] == 'chat' and not impersonate:
@@ -169,15 +182,51 @@ def generate_chat_prompt(user_input, state, **kwargs):
     prompt = make_prompt(messages)
 
     # Handle truncation
-    max_length = get_max_prompt_length(state)
-    while len(messages) > 0 and get_encoded_length(prompt) > max_length:
-        # Try to save the system message
-        if len(messages) > 1 and messages[0]['role'] == 'system':
-            messages.pop(1)
-        else:
-            messages.pop(0)
+    if shared.tokenizer is not None:
+        max_length = get_max_prompt_length(state)
+        encoded_length = get_encoded_length(prompt)
+        while len(messages) > 0 and encoded_length > max_length:
 
-        prompt = make_prompt(messages)
+            # Remove old message, save system message
+            if len(messages) > 2 and messages[0]['role'] == 'system':
+                messages.pop(1)
+
+            # Remove old message when no system message is present
+            elif len(messages) > 1 and messages[0]['role'] != 'system':
+                messages.pop(0)
+
+            # Resort to truncating the user input
+            else:
+
+                user_message = messages[-1]['content']
+
+                # Bisect the truncation point
+                left, right = 0, len(user_message) - 1
+
+                while right - left > 1:
+                    mid = (left + right) // 2
+
+                    messages[-1]['content'] = user_message[:mid]
+                    prompt = make_prompt(messages)
+                    encoded_length = get_encoded_length(prompt)
+
+                    if encoded_length <= max_length:
+                        left = mid
+                    else:
+                        right = mid
+
+                messages[-1]['content'] = user_message[:left]
+                prompt = make_prompt(messages)
+                encoded_length = get_encoded_length(prompt)
+                if encoded_length > max_length:
+                    logger.error(f"Failed to build the chat prompt. The input is too long for the available context length.\n\nTruncation length: {state['truncation_length']}\nmax_new_tokens: {state['max_new_tokens']} (is it too high?)\nAvailable context length: {max_length}\n")
+                    raise ValueError
+                else:
+                    logger.warning(f"The input has been truncated. Context length: {state['truncation_length']}, max_new_tokens: {state['max_new_tokens']}, available context length: {max_length}.")
+                    break
+
+            prompt = make_prompt(messages)
+            encoded_length = get_encoded_length(prompt)
 
     if also_return_rows:
         return prompt, [message['content'] for message in messages]
@@ -461,11 +510,11 @@ def rename_history(old_id, new_id, character, mode):
     old_p = get_history_file_path(old_id, character, mode)
     new_p = get_history_file_path(new_id, character, mode)
     if new_p.parent != old_p.parent:
-        logger.error(f"The following path is not allowed: {new_p}.")
+        logger.error(f"The following path is not allowed: \"{new_p}\".")
     elif new_p == old_p:
         logger.info("The provided path is identical to the old one.")
     else:
-        logger.info(f"Renaming {old_p} to {new_p}")
+        logger.info(f"Renaming \"{old_p}\" to \"{new_p}\"")
         old_p.rename(new_p)
 
 
@@ -482,12 +531,13 @@ def find_all_histories(state):
         old_p = Path(f'logs/{character}_persistent.json')
         new_p = Path(f'logs/persistent_{character}.json')
         if old_p.exists():
-            logger.warning(f"Renaming {old_p} to {new_p}")
+            logger.warning(f"Renaming \"{old_p}\" to \"{new_p}\"")
             old_p.rename(new_p)
+
         if new_p.exists():
             unique_id = datetime.now().strftime('%Y%m%d-%H-%M-%S')
             p = get_history_file_path(unique_id, character, state['mode'])
-            logger.warning(f"Moving {new_p} to {p}")
+            logger.warning(f"Moving \"{new_p}\" to \"{p}\"")
             p.parent.mkdir(exist_ok=True)
             new_p.rename(p)
 
@@ -655,6 +705,9 @@ def load_character(character, name1, name2):
 
 
 def load_instruction_template(template):
+    if template == 'None':
+        return ''
+
     for filepath in [Path(f'instruction-templates/{template}.yaml'), Path('instruction-templates/Alpaca.yaml')]:
         if filepath.exists():
             break

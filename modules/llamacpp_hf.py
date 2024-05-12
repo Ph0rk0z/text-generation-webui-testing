@@ -7,7 +7,7 @@ from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from modules import RoPE, shared
+from modules import RoPE, llama_cpp_python_hijack, shared
 from modules.logging_colors import logger
 
 try:
@@ -48,7 +48,7 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model._ctx
+            'ctx': self.model._ctx.ctx
         }
 
         if shared.args.cfg_cache:
@@ -74,7 +74,7 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model._ctx
+            'ctx': self.model._ctx.ctx
         })
 
     def save_negative_cache(self):
@@ -82,20 +82,20 @@ class LlamacppHF(PreTrainedModel):
             'n_tokens': self.model.n_tokens,
             'input_ids': self.model.input_ids,
             'scores': self.model.scores,
-            'ctx': self.model._ctx
+            'ctx': self.model._ctx.ctx
         })
 
     def load_cache(self):
         self.model.n_tokens = self.llamacpp_cache['n_tokens']
         self.model.input_ids = self.llamacpp_cache['input_ids']
         self.model.scores = self.llamacpp_cache['scores']
-        self.model._ctx = self.llamacpp_cache['ctx']
+        self.model._ctx.ctx = self.llamacpp_cache['ctx']
 
     def load_negative_cache(self):
         self.model.n_tokens = self.llamacpp_cache_negative['n_tokens']
         self.model.input_ids = self.llamacpp_cache_negative['input_ids']
         self.model.scores = self.llamacpp_cache_negative['scores']
-        self.model._ctx = self.llamacpp_cache_negative['ctx']
+        self.model._ctx.ctx = self.llamacpp_cache_negative['ctx']
 
     @property
     def device(self) -> torch.device:
@@ -192,7 +192,7 @@ class LlamacppHF(PreTrainedModel):
         if path.is_file():
             model_file = path
         else:
-            model_file = list(path.glob('*.gguf'))[0]
+            model_file = sorted(path.glob('*.gguf'))[0]
 
         logger.info(f"llama.cpp weights detected: {model_file}\n")
 
@@ -216,7 +216,9 @@ class LlamacppHF(PreTrainedModel):
             'tensor_split': tensor_split_list,
             'rope_freq_scale': 1.0 / shared.args.compress_pos_emb,
             'logits_all': shared.args.logits_all,
-            'offload_kqv': not shared.args.no_offload_kqv
+            'offload_kqv': not shared.args.no_offload_kqv,
+            'split_mode': 1 if not shared.args.row_split else 2,
+            'flash_attn': shared.args.flash_attn
         }
 
         Llama = llama_cpp_lib().Llama

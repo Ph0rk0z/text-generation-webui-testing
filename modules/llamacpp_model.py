@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import torch
 
-from modules import RoPE, shared
+from modules import RoPE, llama_cpp_python_hijack, shared
 from modules.callbacks import Iteratorize
 from modules.logging_colors import logger
 from modules.text_generation import get_max_prompt_length
@@ -95,7 +95,9 @@ class LlamaCppModel:
             'rope_freq_base': RoPE.get_rope_freq_base(shared.args.alpha_value, shared.args.rope_freq_base),
             'tensor_split': tensor_split_list,
             'rope_freq_scale': 1.0 / shared.args.compress_pos_emb,
-            'offload_kqv': not shared.args.no_offload_kqv
+            'offload_kqv': not shared.args.no_offload_kqv,
+            'split_mode': 1 if not shared.args.row_split else 2,
+            'flash_attn': shared.args.flash_attn
         }
 
         result.model = Llama(**params)
