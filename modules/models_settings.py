@@ -44,6 +44,8 @@ def get_model_metadata(model):
             loader = 'QuIP#'
         else:
             loader = infer_loader(model, model_settings)
+        
+        model_settings['loader'] = loader
 
     # GGUF metadata
     if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF']:
