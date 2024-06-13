@@ -45,8 +45,6 @@ def get_model_metadata(model):
         else:
             loader = infer_loader(model, model_settings)
 
-        model_settings['loader'] = loader
-
     # GGUF metadata
     if model_settings['loader'] in ['llama.cpp', 'llamacpp_HF']:
         path = Path(f'{shared.args.model_dir}/{model}')
@@ -56,6 +54,7 @@ def get_model_metadata(model):
             model_file = list(path.glob('*.gguf'))[0]
 
         metadata = metadata_gguf.load_metadata(model_file)
+
         for k in metadata:
             if k.endswith('context_length'):
                 model_settings['n_ctx'] = metadata[k]
@@ -63,6 +62,9 @@ def get_model_metadata(model):
                 model_settings['rope_freq_base'] = metadata[k]
             elif k.endswith('rope.scale_linear'):
                 model_settings['compress_pos_emb'] = metadata[k]
+            elif k.endswith('block_count'):
+                model_settings['n_gpu_layers'] = metadata[k] + 1
+
         if 'tokenizer.chat_template' in metadata:
             template = metadata['tokenizer.chat_template']
             eos_token = metadata['tokenizer.ggml.tokens'][metadata['tokenizer.ggml.eos_token_id']]
@@ -199,13 +201,13 @@ def update_model_parameters(state, initial=False):
             continue
 
         # Setting null defaults
-        if element in ['wbits', 'groupsize', 'model_type'] and value == 'None':
+        if element in ['wbits', 'groupsize','model_type'] and value == 'None':
             value = vars(shared.args_defaults)[element]
         elif element in ['cpu_memory'] and value == 0:
             value = vars(shared.args_defaults)[element]
 
         # Making some simple conversions
-        if element in ['wbits', 'groupsize']:
+        if element in ['wbits', 'groupsize', 'pre_layer']:
             value = int(value)
         elif element == 'cpu_memory' and value is not None:
             value = f"{value}MiB"

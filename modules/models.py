@@ -1,5 +1,4 @@
 import gc
-import logging
 import os
 import pprint
 import re
@@ -30,7 +29,6 @@ from modules import llama_attn_hijack
 from modules import RoPE, sampler_hijack
 from modules.logging_colors import logger
 from modules.models_settings import get_model_metadata
-from modules.relative_imports import RelativeImport
 
 transformers.logging.set_verbosity_error()
 
@@ -60,6 +58,9 @@ if shared.args.deepspeed:
     dschf = HfDeepSpeedConfig(ds_config)  # Keep this object alive for the Transformers integration
 
 sampler_hijack.hijack_samplers()
+
+
+last_generation_time = time.time()
 
 
 def load_model(model_name, loader=None):
@@ -272,7 +273,7 @@ def llamacpp_loader(model_name):
     if path.is_file():
         model_file = path
     else:
-        model_file = list(Path(f'{shared.args.model_dir}/{model_name}').glob('*.gguf'))[0]
+        model_file = sorted(Path(f'{shared.args.model_dir}/{model_name}').glob('*.gguf'))[0]
 
     logger.info(f"llama.cpp weights detected: \"{model_file}\"")
     model, tokenizer = LlamaCppModel.from_pretrained(model_file)
@@ -311,6 +312,7 @@ def AutoAWQ_loader(model_name):
     )
 
     return model
+
 
 
 def QuipSharp_loader(model_name):
@@ -381,12 +383,12 @@ def ExLlamav2_HF_loader(model_name):
 
 def HQQ_loader(model_name):
     from hqq.core.quantize import HQQBackend, HQQLinear
-    from hqq.engine.hf import HQQModelForCausalLM
+    from hqq.models.hf.base import AutoHQQHFModel
 
     logger.info(f"Loading HQQ model with backend: \"{shared.args.hqq_backend}\"")
 
     model_dir = Path(f'{shared.args.model_dir}/{model_name}')
-    model = HQQModelForCausalLM.from_quantized(str(model_dir))
+    model = AutoHQQHFModel.from_quantized(str(model_dir))
     HQQLinear.set_backend(getattr(HQQBackend, shared.args.hqq_backend))
     return model
 
@@ -432,6 +434,7 @@ def clear_torch_cache():
 
 def unload_model():
     shared.model = shared.tokenizer = None
+    shared.previous_model_name = shared.model_name
     shared.model_name = 'None'
     shared.lora_names = []
     shared.model_dirty_from_training = False
@@ -441,3 +444,21 @@ def unload_model():
 def reload_model():
     unload_model()
     shared.model, shared.tokenizer = load_model(shared.model_name)
+
+
+def unload_model_if_idle():
+    global last_generation_time
+
+    logger.info(f"Setting a timeout of {shared.args.idle_timeout} minutes to unload the model in case of inactivity.")
+
+    while True:
+        shared.generation_lock.acquire()
+        try:
+            if time.time() - last_generation_time > shared.args.idle_timeout * 60:
+                if shared.model is not None:
+                    logger.info("Unloading the model for inactivity.")
+                    unload_model()
+        finally:
+            shared.generation_lock.release()
+
+        time.sleep(60)
