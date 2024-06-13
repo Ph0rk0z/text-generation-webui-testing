@@ -53,7 +53,7 @@ loaders_and_params = OrderedDict({
         'no_offload_kqv',
         'row_split',
 #        'tensorcores',
-        'flash-attn',
+        'flash_attn',
         'streaming_llm',
         'attention_sink_size',
     ],
@@ -80,7 +80,7 @@ loaders_and_params = OrderedDict({
         'no_offload_kqv',
         'row_split',
 #        'tensorcores',
-        'flash-attn',
+        'flash_attn',
         'streaming_llm',
         'attention_sink_size',
         'llamacpp_HF_info',
@@ -225,6 +225,10 @@ def transformers_samplers():
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
+        'dry_multiplier',
+        'dry_base',
+        'dry_allowed_length',
+        'dry_sequence_breakers',
         'seed',
         'do_sample',
         'penalty_alpha',
@@ -298,6 +302,10 @@ loaders_samplers = {
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
+        'dry_multiplier',
+        'dry_base',
+        'dry_allowed_length',
+        'dry_sequence_breakers',
         'seed',
         'do_sample',
         'mirostat_mode',
@@ -356,6 +364,10 @@ loaders_samplers = {
         'repetition_penalty_range',
         'encoder_repetition_penalty',
         'no_repeat_ngram_size',
+        'dry_multiplier',
+        'dry_base',
+        'dry_allowed_length',
+        'dry_sequence_breakers',
         'seed',
         'do_sample',
         'mirostat_mode',
@@ -460,13 +472,11 @@ def blacklist_samplers(loader, dynamic_temperature):
 
     return output
 
-
 def get_model_types(loader):
     if loader in loaders_model_types:
         return loaders_model_types[loader]
 
     return ["None"]
-
 
 def get_gpu_memory_keys():
     return [k for k in shared.gradio if k.startswith('gpu_memory')]
